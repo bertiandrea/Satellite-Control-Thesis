@@ -10,14 +10,14 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 NUM_ENVS = 4096
-MAX_EPISODE_LENGTH = 1200.0
+MAX_EPISODE_LENGTH = 240.0
 HEADLESS = False
 DEBUG_ARROWS = True
 LOG_TRAJECTORIES = True
 
-ROLLOUTS = 16
+ROLLOUTS = 8
 LEARNING_EPOCHS = 8
-MINI_BATCHES = 2
+MINI_BATCHES = 8
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
@@ -84,7 +84,7 @@ CONFIG = {
             "learning_rate_scheduler_kwargs" : {"kl_threshold": 0.016},
             "state_preprocessor" : RunningStandardScaler,
             "value_preprocessor" : RunningStandardScaler,
-            "rewards_shaper" : lambda rewards, timestep, timesteps: rewards * 0.1,
+            "rewards_shaper" : lambda rewards, timestep, timesteps: rewards * 0.01,
 
             "discount_factor" : 0.99, #(γ) Future reward discount; balances immediate versus long-term return.
             "learning_rate" : 1e-3, #Step size for optimizer (e.g. Adam) when updating policy and value networks.
