@@ -3,6 +3,7 @@
 **/_utils/*.png
 **/logs/
 **/logs/*.pt
+
 **/Training/runs/
 **/Training/run_config/
 **/Training/base_runs/
