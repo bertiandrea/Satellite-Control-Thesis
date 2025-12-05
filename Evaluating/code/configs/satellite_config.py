@@ -22,7 +22,7 @@ MINI_BATCHES = 8
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
     "set_seed": True,
-    "seed": 4200000000,
+    "seed": 420,
 
     "profile": False,
 
