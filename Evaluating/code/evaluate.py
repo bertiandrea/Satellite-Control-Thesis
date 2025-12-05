@@ -17,6 +17,7 @@ import argparse
 import json
 import datetime
 import os
+import re
 from pathlib import Path
 
 def parse_args():
@@ -46,10 +47,11 @@ def main():
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = "run_config"
     os.makedirs(run_dir, exist_ok=True)
-    config_path = os.path.join(run_dir, f"evaluate_config_{args.run_name}_{timestamp}.json")
+    safe_run_name = re.sub(r'[\\/]+', '_', args.run_name)
+    config_path = os.path.join(run_dir, f"evaluate_config_{safe_run_name}_{timestamp}.json")
 
     config_to_save = CONFIG.copy()
-    config_to_save["model_path"] = str(Path(__file__).resolve().parent.parent / f"{args.run_name}.pt")
+    config_to_save["model_path"] = str(Path(__file__).resolve().parent.parent / f"{safe_run_name}.pt")
 
     with open(config_path, "w") as f:
         json.dump(config_to_save, f, indent=4, default=str)
