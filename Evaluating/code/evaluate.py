@@ -17,6 +17,7 @@ import argparse
 import json
 import datetime
 import os
+from pathlib import Path
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -48,7 +49,7 @@ def main():
     config_path = os.path.join(run_dir, f"evaluate_config_{args.run_name}_{timestamp}.json")
 
     config_to_save = CONFIG.copy()
-    config_to_save["model_path"] = f"/home/andreaberti/Satellite-Control/Evaluating/{args.run_name}.pt"
+    config_to_save["model_path"] = str(Path(__file__).resolve().parent.parent / f"{args.run_name}.pt")
 
     with open(config_path, "w") as f:
         json.dump(config_to_save, f, indent=4, default=str)
@@ -90,10 +91,9 @@ def main():
             observation_space=env.state_space,
             action_space=env.action_space,
             device=env.device)
+    agent.load(str(Path(__file__).resolve().parent.parent / f"{args.run_name}.pt"))
 
-    agent.load("/home/andreaberti/Satellite-Control/Evaluating/" + args.run_name + ".pt")
-
-    print("Loaded agent from /home/andreaberti/Satellite-Control/Evaluating/" + args.run_name + ".pt")
+    print(str(Path(__file__).resolve().parent.parent / f"{args.run_name}.pt"))
     
     trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
 

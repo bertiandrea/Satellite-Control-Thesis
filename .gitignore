@@ -3,3 +3,8 @@
 **/_utils/*.png
 **/logs/
 **/logs/*.pt
+**/Training/runs/
+**/Training/run_config/
+**/Training/base_runs/
+**/Training/energy_penalty_runs/
+**/Training/goal_runs/

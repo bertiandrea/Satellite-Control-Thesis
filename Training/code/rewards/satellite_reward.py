@@ -74,11 +74,6 @@ class SimpleReward(RewardFunction):
         reward = r_q + r_omega + r_acc
         self._assert_valid_tensor(reward, "reward")
 
-        self._log_scalar("Reward_policy/q", r_q.mean().item())
-        self._log_scalar("Reward_policy/omega", r_omega.mean().item())
-        self._log_scalar("Reward_policy/acc", r_acc.mean().item())
-        self._log_scalar("Reward_policy/total", reward.mean().item())
-
         self.global_step += 1
         return reward
 
@@ -86,8 +81,9 @@ class ExponentialReward(RewardFunction):
     def __init__(self, log_reward: bool = True, log_reward_interval: int = 100):
         super().__init__(log_reward, log_reward_interval)
         self.prev_quat_err: Optional[torch.Tensor] = None
-        self.th_ang_goal = 0.25 * (math.pi / 180)
-        self.lambda_u = 5e-4
+        self.th_ang_goal = 0.01 * (math.pi / 180)
+        self.th_ang_vel_goal = 0.1 * (math.pi / 180)
+        self.lambda_u = 0.0
 
     def compute(
         self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions
@@ -103,7 +99,7 @@ class ExponentialReward(RewardFunction):
         else:
             reward = torch.where(quat_err[:, 3] > self.prev_quat_err[:, 3], r_q - 1.0, r_q)
 
-        in_goal = (phi <= self.th_ang_goal)
+        in_goal = (phi <= self.th_ang_goal) & (ang_vel_err <= self.th_ang_vel_goal)
         r_bonus = 9.0 * in_goal.float()
 
         u_norm_sq = torch.sum(actions ** 2, dim=-1)
@@ -118,15 +114,35 @@ class ExponentialReward(RewardFunction):
         self._log_scalar("Reward_policy/action[0, 1]", actions[0, 1])
         self._log_scalar("Reward_policy/action[0, 2]", actions[0, 2])
 
-        self._log_scalar("Reward_policy/phi", phi.mean().item() * (180 / torch.pi))
-        self._log_scalar("Reward_policy/ang_vel_err", ang_vel_err.mean().item())
+        self._log_scalar("Reward_policy/max_torque", actions.abs().max().item())
 
         self._log_scalar("Reward_policy/in_goal", in_goal.sum().item())   
-        self._log_scalar("Reward_policy/energy", u_norm_sq.mean().item())
-        self._log_scalar("Reward_policy/max_torque", actions.abs().max().item())
+
+        ################# MODE LOG #################
+        self._log_scalar("Reward_policy/phi_mode", phi.mode().values.item() * (180 / torch.pi))
+        self._log_scalar("Reward_policy/ang_vel_err_mode", ang_vel_err.mode().values.item() * (180 / torch.pi))
+
+        self._log_scalar("Reward_policy/energy_mode", u_norm_sq.mode().values.item())
+        self._log_scalar("Reward_policy/max_torque_mode", actions.abs().max(dim=1).values.mode().values.item())
+
+        self._log_scalar("Reward_policy/total_mode", final_reward.mode().values.item())
+
+        self._log_scalar("Reward_policy/phi_mode_count", torch.isclose(phi * (180 / torch.pi), phi.mode().values * (180 / torch.pi), atol=1e-2).sum().item())
+        self._log_scalar("Reward_policy/ang_vel_err_mode_count", torch.isclose(ang_vel_err * (180 / torch.pi), ang_vel_err.mode().values * (180 / torch.pi), atol=1e-2).sum().item())
+        
+        self._log_scalar("Reward_policy/energy_mode_count", torch.isclose(u_norm_sq, u_norm_sq.mode().values, atol=1.0).sum().item())
+        self._log_scalar("Reward_policy/max_torque_mode_count", torch.isclose(actions.abs().max(dim=1).values, actions.abs().max(dim=1).values.mode().values, atol=1.0).sum().item())
+        
+        self._log_scalar("Reward_policy/total_mode_count", torch.isclose(final_reward, final_reward.mode().values, atol=1e-2).sum().item())
+
+        ################# MEAN LOG #################
+        self._log_scalar("Reward_policy/phi_mean", phi.mean().item() * (180 / torch.pi))
+        self._log_scalar("Reward_policy/ang_vel_err_mean", ang_vel_err.mean().item() * (180 / torch.pi))
+
+        self._log_scalar("Reward_policy/energy_mean", u_norm_sq.mean().item())
         self._log_scalar("Reward_policy/max_torque_mean", actions.abs().max(dim=1).values.mean().item())
 
-        self._log_scalar("Reward_policy/total", final_reward.mean().item())
+        self._log_scalar("Reward_policy/total_mean", final_reward.mean().item())
 
         self.global_step += 1
         return final_reward
