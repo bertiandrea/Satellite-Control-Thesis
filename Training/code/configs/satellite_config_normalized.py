@@ -10,21 +10,23 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 NUM_ENVS = 4096
-MAX_EPISODE_LENGTH = 240.0
+MAX_EPISODE_LENGTH = 400.0
+N_EPISODES = 8
 HEADLESS = False
+PROFILE = False
 DEBUG_ARROWS = True
-LOG_TRAJECTORIES = True
+DEBUG_PRINTS = False
 
-ROLLOUTS = 8
+ROLLOUTS = 16
 LEARNING_EPOCHS = 8
-MINI_BATCHES = 8
+MINI_BATCHES = 2
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
     "set_seed": True,
-    "seed": 420,
-
-    "profile": False,
+    "seed": 42,
+    
+    "profile": PROFILE,
 
     "physics_engine": "physx",
 
@@ -32,14 +34,13 @@ CONFIG = {
     "sim_device": "cuda:0",
     "graphics_device_id": 0,
     "headless": HEADLESS,
-
+    
     # --- env section -------------------------------------------------------
     "env": {
         "numEnvs": NUM_ENVS,
         "numObservations": 15, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
         "numStates": 18, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
         "numActions": 3,
-       
         "clipActions": 1.0,
         "clipObservations": 10.0,
 
@@ -48,9 +49,7 @@ CONFIG = {
         "envSpacing": 3.0,
         "torque_scale": 100.0,
         "debug_arrows": DEBUG_ARROWS,
-        "debug_prints": False,
-        "discretize_starting_pos": True,
-        "log_trajectories": LOG_TRAJECTORIES,
+        "debug_prints": DEBUG_PRINTS,
 
         "asset": {
             "assetRoot": str(Path(__file__).resolve().parent.parent),
@@ -107,33 +106,36 @@ CONFIG = {
                 "wandb": False,
             }
         },
+
         "trainer": {
-            "timesteps": int(MAX_EPISODE_LENGTH / ( 1.0 / 60.0 )),
-            "disable_progressbar": False,
+            "timesteps": int(MAX_EPISODE_LENGTH / (1.0 / 60.0) * N_EPISODES),
+            "disable_progressbar": DEBUG_PRINTS,
             "headless": HEADLESS,
-            "stochastic_evaluation": False,
         },
+
         "memory": {
             "rollouts": ROLLOUTS,
         }
     },
-    
+
     # --- reward -----------------------------------------------------------
     "reward": {
         "reward_function": "ExponentialReward",
         "ExponentialReward":{
-            "lambda_u": 0.0,
-            "th_ang_goal": 0.01,
+            "lambda_u": 5e-4,
+            "th_ang_goal": 0.25,
             "th_ang_vel_goal": 0.1,
         },
         "log_reward": True,
         "log_reward_interval": 100,  # steps
     },
 
-    # --- explosion ---------------------------------------------------------
-    "explosion": {
+    # --- CAPS --------------------------------------------------------------
+    "CAPS": {
         "enabled": False,
-        "explosion_time": 60,  # seconds
+        "lambda_temporal_smoothness": 0.1,  # λ_t
+        "lambda_spatial_smoothness": 0.1,   # λ_s
+        "noise_std": 0.5,                   # σ
     },
 
     # --- dr_randomization -------------------------------------------------

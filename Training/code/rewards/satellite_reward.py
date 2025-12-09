@@ -78,12 +78,13 @@ class SimpleReward(RewardFunction):
         return reward
 
 class ExponentialReward(RewardFunction):
-    def __init__(self, log_reward: bool = True, log_reward_interval: int = 100):
+    def __init__(self, log_reward: bool = True, log_reward_interval: int = 100, 
+                 th_ang_goal = 1.0, th_ang_vel_goal = 0.1, lambda_u = 0.0):
         super().__init__(log_reward, log_reward_interval)
         self.prev_quat_err: Optional[torch.Tensor] = None
-        self.th_ang_goal = 0.01 * (math.pi / 180)
-        self.th_ang_vel_goal = 0.1 * (math.pi / 180)
-        self.lambda_u = 0.0
+        self.th_ang_goal = th_ang_goal * (math.pi / 180)
+        self.th_ang_vel_goal = th_ang_vel_goal * (math.pi / 180)
+        self.lambda_u = lambda_u
 
     def compute(
         self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions
@@ -146,3 +147,8 @@ class ExponentialReward(RewardFunction):
 
         self.global_step += 1
         return final_reward
+
+REWARD_MAP = {
+    "SimpleReward": SimpleReward,
+    "ExponentialReward": ExponentialReward,
+}

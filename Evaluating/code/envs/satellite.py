@@ -2,10 +2,7 @@
 
 from code.utils.satellite_util import quat_from_euler_xyz, sample_random_quaternion_batch, quat_diff, quat_diff_rad, quat_axis, quat_mul
 from code.envs.vec_task import DRVecTask
-from code.rewards.satellite_reward import (
-    SimpleReward,
-    ExponentialReward
-)
+from code.rewards.satellite_reward import REWARD_MAP
 
 import isaacgym #BugFix
 import torch
@@ -20,11 +17,6 @@ import os
 BASE_COLORS_SAT  = torch.tensor([[1,0,1], [0,1,1], [1,1,0]], dtype=torch.float)
 BASE_COLORS_GOAL = torch.tensor([[0,0,1], [0,1,0], [1,0,0]], dtype=torch.float)
 
-REWARD_MAP = {
-    "SimpleReward": SimpleReward,
-    "ExponentialReward": ExponentialReward,
-}
-
 class Satellite(DRVecTask):
     def __init__(self, config, rl_device, sim_device, graphics_device_id, headless):
         self.dt =                    config["sim"].get('dt', 1 / 60.0)                             # seconds
@@ -37,7 +29,18 @@ class Satellite(DRVecTask):
         self.torque_scale =          config["env"].get('torque_scale', 1.0)
         self.debug_arrows =          config["env"].get('debug_arrows', False)
         self.debug_prints =          config["env"].get('debug_prints', False)
-        self.reward_fn =             REWARD_MAP[config["reward"].get('reward_function', 'SimpleReward')](config["reward"].get("log_reward", True), config["reward"].get("log_reward_interval", 100))
+
+        try:
+            self.reward_fn = REWARD_MAP[config["reward"].get("reward_function")](
+                log_reward=config["reward"].get("log_reward", True),
+                log_reward_interval=config["reward"].get("log_reward_interval", 100),
+                **config["reward"].get(config["reward"].get("reward_function"), {}),
+            )
+        except Exception:
+            self.reward_fn = REWARD_MAP["SimpleReward"](
+                log_reward=config["reward"].get("log_reward", True),
+                log_reward_interval=config["reward"].get("log_reward_interval", 100),
+            )
 
         ###################################################
         self.log_trajectories =      config["env"].get('log_trajectories', False)
