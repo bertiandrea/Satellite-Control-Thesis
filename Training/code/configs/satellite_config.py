@@ -21,6 +21,9 @@ ROLLOUTS = 8
 LEARNING_EPOCHS = 8
 MINI_BATCHES = 8
 
+LAMBDA_U = 0.0
+TH_ANG_GOAL = 1.0
+
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
     "set_seed": True,
@@ -122,8 +125,8 @@ CONFIG = {
     "reward": {
         "reward_function": "ExponentialReward",
         "ExponentialReward":{
-            "lambda_u": 0.0,
-            "th_ang_goal": 0.25,
+            "lambda_u": LAMBDA_U,
+            "th_ang_goal": TH_ANG_GOAL,
             "th_ang_vel_goal": 0.1,
         },
         "log_reward": True,
