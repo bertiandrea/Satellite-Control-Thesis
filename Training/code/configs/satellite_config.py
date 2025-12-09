@@ -123,7 +123,7 @@ CONFIG = {
         "reward_function": "ExponentialReward",
         "ExponentialReward":{
             "lambda_u": 0.0,
-            "th_ang_goal": 0.01,
+            "th_ang_goal": 0.25,
             "th_ang_vel_goal": 0.1,
         },
         "log_reward": True,
