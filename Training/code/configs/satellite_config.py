@@ -22,7 +22,7 @@ LEARNING_EPOCHS = 8
 MINI_BATCHES = 8
 
 LAMBDA_U = 0.0
-TH_ANG_GOAL = 1.0
+TH_ANG_GOAL = 0.25
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
