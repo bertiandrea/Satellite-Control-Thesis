@@ -135,10 +135,10 @@ CONFIG = {
 
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
-        "enabled": False,
-        "lambda_temporal_smoothness": 0.1,  # λ_t
-        "lambda_spatial_smoothness": 0.1,   # λ_s
-        "noise_std": 0.5,                   # σ
+        "enabled": True,
+        "lambda_temporal_smoothness": 1e-9,  # λ_t
+        "lambda_spatial_smoothness": 1e-9,   # λ_s
+        "noise_std": 0.01,                   # σ
     },
 
     # --- dr_randomization -------------------------------------------------
