@@ -135,7 +135,7 @@ CONFIG = {
 
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
-        "enabled": True,
+        "enabled": False,
         "lambda_temporal_smoothness": 1e-9,  # λ_t
         "lambda_spatial_smoothness": 1e-9,   # λ_s
         "noise_std": 0.01,                   # σ
