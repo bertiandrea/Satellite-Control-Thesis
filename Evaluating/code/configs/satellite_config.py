@@ -19,7 +19,7 @@ ROLLOUTS = 8
 LEARNING_EPOCHS = 8
 MINI_BATCHES = 8
 
-LAMBDA_U = 0.0
+LAMBDA_U = 1e-07
 TH_ANG_GOAL = 0.25
 
 DR_RANDOMIZATION = False
@@ -28,7 +28,7 @@ EXPLOSION = False
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
     "set_seed": True,
-    "seed": 420,
+    "seed": 42000,
 
     "profile": False,
 
