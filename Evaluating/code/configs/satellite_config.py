@@ -20,7 +20,10 @@ LEARNING_EPOCHS = 8
 MINI_BATCHES = 8
 
 LAMBDA_U = 0.0
-TH_ANG_GOAL = 1.0
+TH_ANG_GOAL = 0.25
+
+DR_RANDOMIZATION = False
+EXPLOSION = False
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
@@ -135,13 +138,13 @@ CONFIG = {
 
     # --- explosion ---------------------------------------------------------
     "explosion": {
-        "enabled": False,
+        "enabled": EXPLOSION,
         "explosion_time": 60,  # seconds
     },
 
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
-        "enabled": False,
+        "enabled": DR_RANDOMIZATION,
         "dr_params": {
             "observations": {
                 "distribution": "uniform", # "uniform" or "gaussian"
@@ -160,7 +163,7 @@ CONFIG = {
                         "inertia": {
                             "distribution": "uniform", # "uniform" or "gaussian"
                             "operation": "scaling", # "scaling" or "addition"
-                            "range": [0.5, 1.5], # gaussian: [mu, var], uniform: [low, high]
+                            "range": [0.9, 1.1], # gaussian: [mu, var], uniform: [low, high]
                         }
                     }
                 }

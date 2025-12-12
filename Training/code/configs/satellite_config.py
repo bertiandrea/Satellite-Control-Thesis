@@ -24,6 +24,9 @@ MINI_BATCHES = 8
 LAMBDA_U = 0.0
 TH_ANG_GOAL = 0.25
 
+DR_RANDOMIZATION = False
+CAPS = False
+
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
     "set_seed": True,
@@ -135,7 +138,7 @@ CONFIG = {
 
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
-        "enabled": False,
+        "enabled": CAPS,
         "lambda_temporal_smoothness": 1e-9,  # λ_t
         "lambda_spatial_smoothness": 1e-9,   # λ_s
         "noise_std": 0.01,                   # σ
@@ -143,7 +146,7 @@ CONFIG = {
 
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
-        "enabled": False,
+        "enabled": DR_RANDOMIZATION,
         "dr_params": {
             "observations": {
                 "distribution": "uniform", # "uniform" or "gaussian"
@@ -162,7 +165,7 @@ CONFIG = {
                         "inertia": {
                             "distribution": "uniform", # "uniform" or "gaussian"
                             "operation": "scaling", # "scaling" or "addition"
-                            "range": [0.5, 1.5], # gaussian: [mu, var], uniform: [low, high]
+                            "range": [0.9, 1.1], # gaussian: [mu, var], uniform: [low, high]
                         }
                     }
                 }
