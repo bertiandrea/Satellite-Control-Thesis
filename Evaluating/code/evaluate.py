@@ -51,7 +51,7 @@ def main():
     config_path = os.path.join(run_dir, f"evaluate_config_{safe_run_name}_{timestamp}.json")
 
     config_to_save = CONFIG.copy()
-    config_to_save["model_path"] = str(Path(__file__).resolve().parent.parent / f"{safe_run_name}.pt")
+    config_to_save["model_path"] = str(Path(__file__).resolve().parent.parent.parent / "Training" / "runs" / f"{safe_run_name}.pt")
 
     with open(config_path, "w") as f:
         json.dump(config_to_save, f, indent=4, default=str)
@@ -93,9 +93,9 @@ def main():
             observation_space=env.state_space,
             action_space=env.action_space,
             device=env.device)
-    agent.load(str(Path(__file__).resolve().parent.parent / f"{args.run_name}.pt"))
+    agent.load(str(Path(__file__).resolve().parent.parent.parent / "Training" / "runs" / f"{args.run_name}.pt"))
 
-    print(str(Path(__file__).resolve().parent.parent / f"{args.run_name}.pt"))
+    print(str(Path(__file__).resolve().parent.parent.parent / "Training" / "runs"  / f"{args.run_name}.pt"))
     
     trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
 
