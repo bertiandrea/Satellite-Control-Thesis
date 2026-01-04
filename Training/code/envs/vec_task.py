@@ -18,6 +18,8 @@ from gym import spaces
 
 from torch.profiler import record_function
 
+from code.utils.satellite_util import quat_from_euler_xyz, get_euler_xyz, quat_mul
+
 EXISTING_SIM = None
 
 def _create_sim_once(gym, *args, **kwargs):
@@ -194,7 +196,11 @@ class VecTask(Env):
                 if self.debug_prints:
                     print("Observations BEFORE randomization:")
                     print(f"obs_buf[0]: {', '.join(f'{v:.2f}' for v in self.obs_buf[0].tolist())}")
-                self.obs_buf = self.dr_randomizations['observations']['noise_lambda'](self.obs_buf)
+                
+                self.obs_buf[:, 0:4] = self.dr_randomizations['observations']['noise_lambda_quat'](self.obs_buf[:, 0:4])
+                self.obs_buf[:, 4:8] = self.dr_randomizations['observations']['noise_lambda_quat'](self.obs_buf[:, 4:8])
+                self.obs_buf[:, 8: ] = self.dr_randomizations['observations']['noise_lambda'](self.obs_buf[:, 8: ])
+                
                 if self.debug_prints:
                     print("Observations AFTER randomization:")
                     print(f"obs_buf[0]: {', '.join(f'{v:.2f}' for v in self.obs_buf[0].tolist())}")
@@ -371,29 +377,61 @@ class DRVecTask(VecTask):
             dist = dr_params[param]["distribution"]
             operation = dr_params[param]["operation"]
             if dist == 'gaussian':
-                mu, var = dr_params[param]["range"]
+                mu, std = dr_params[param]["range"]
                 if operation == "scaling":
-                    def noise_lambda(tensor, param_name=param):
-                        return tensor * (torch.randn_like(tensor) * var + mu)
+                    def noise_lambda(tensor, mu=mu, std=std):
+                        return tensor * (torch.randn_like(tensor) * std + mu)
+                    def noise_lambda_quat(q, mu=mu, std=std):
+                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
+                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
+                        scale = torch.randn((q.shape[0], 1), device=q.device, dtype=q.dtype) * std + mu
+                        angle = scale * 2.0 * torch.acos(torch.clamp(q[:, 3], -1.0, 1.0)).unsqueeze(1)
+                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
+                        qn = quat_mul(dq, q)
+                        return qn / qn.norm(dim=1, keepdim=True)
                 elif operation == "addition":
-                    def noise_lambda(tensor, param_name=param):
-                        return tensor + (torch.randn_like(tensor) * var + mu)
+                    def noise_lambda(tensor, mu=mu, std=std):
+                        return tensor + (torch.randn_like(tensor) * std + mu)
+                    def noise_lambda_quat(q, mu=mu, std=std):
+                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
+                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
+                        angle = torch.randn((q.shape[0], 1), device=q.device, dtype=q.dtype) * std + mu
+                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
+                        qn = quat_mul(dq, q)
+                        return qn / qn.norm(dim=1, keepdim=True)
                 else:
-                    raise ValueError(f"Unsupported operation type")
+                    raise ValueError("Unsupported operation type")
             elif dist == 'uniform':
                 lo, hi = dr_params[param]["range"]
                 if operation == "scaling":
-                    def noise_lambda(tensor):
+                    def noise_lambda(tensor, lo=lo, hi=hi):
                         return tensor * (torch.rand_like(tensor) * (hi - lo) + lo)
+                    def noise_lambda_quat(q, lo=lo, hi=hi):
+                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
+                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
+                        scale = torch.rand((q.shape[0], 1), device=q.device, dtype=q.dtype) * (hi - lo) + lo
+                        angle = scale * 2.0 * torch.acos(torch.clamp(q[:, 3], -1.0, 1.0)).unsqueeze(1)
+                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
+                        qn = quat_mul(dq, q)
+                        return qn / qn.norm(dim=1, keepdim=True)
                 elif operation == "addition":
-                    def noise_lambda(tensor):
+                    def noise_lambda(tensor, lo=lo, hi=hi):
                         return tensor + (torch.rand_like(tensor) * (hi - lo) + lo)
+                    def noise_lambda_quat(q, lo=lo, hi=hi):
+                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
+                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
+                        angle = torch.rand((q.shape[0], 1), device=q.device, dtype=q.dtype) * (hi - lo) + lo
+                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
+                        qn = quat_mul(dq, q)
+                        return qn / qn.norm(dim=1, keepdim=True)
                 else:
-                    raise ValueError(f"Unsupported operation type")
+                    raise ValueError("Unsupported operation type")
             else:
-                raise ValueError(f"Unsupported distribution type")
-            ####################################################################
-            self.dr_randomizations[param] = { 'noise_lambda': noise_lambda }
+                raise ValueError("Unsupported distribution type")
+            self.dr_randomizations[param] = {
+                "noise_lambda": noise_lambda,
+                "noise_lambda_quat": noise_lambda_quat
+            }
 
     def _randomize_actor_properties(self, env_ids, dr_params):
         for env_id in env_ids:

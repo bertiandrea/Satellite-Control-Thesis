@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 class RewardFunction(ABC):
     """Abstract base class for all reward functions."""
 
-    def __init__(self, log_reward: bool = True, log_reward_interval: int = 100):
+    def __init__(self, log_reward: bool, log_reward_interval: int):
         self.global_step: int = 0
         self.log_reward: bool = log_reward
         self.log_reward_interval: int = log_reward_interval
@@ -50,22 +50,18 @@ class RewardFunction(ABC):
         assert not torch.isinf(tensor).any(), f"{name} has Inf values"
 
 class SimpleReward(RewardFunction):
-    def __init__(self, log_reward: bool = True, log_reward_interval: int = 100):
+    def __init__(self, log_reward: bool, log_reward_interval: int):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = 1.0
         self.alpha_omega = 0.0
         self.alpha_acc = 0.0
 
     def compute(
-        self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions
+        self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions, step, total_steps
     ):
         phi = quat_diff_rad(quats, goal_quat)
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
-
-        self._assert_valid_tensor(phi, "phi")
-        self._assert_valid_tensor(omega_err, "omega_err")
-        self._assert_valid_tensor(acc_err, "acc_err")
 
         r_q = self.alpha_q * (1.0 / (1.0 + phi))
         r_omega = r_q * self.alpha_omega * (1.0 / (1.0 + omega_err))
@@ -78,16 +74,17 @@ class SimpleReward(RewardFunction):
         return reward
 
 class ExponentialReward(RewardFunction):
-    def __init__(self, log_reward: bool = True, log_reward_interval: int = 100, 
-                 th_ang_goal = 1.0, th_ang_vel_goal = 0.1, lambda_u = 0.0):
+    def __init__(self, log_reward: bool, log_reward_interval: int,
+                 lambda_u, lambda_du, max_torque):
         super().__init__(log_reward, log_reward_interval)
         self.prev_quat_err: Optional[torch.Tensor] = None
-        self.th_ang_goal = th_ang_goal * (math.pi / 180)
-        self.th_ang_vel_goal = th_ang_vel_goal * (math.pi / 180)
+        self.prev_actions: Optional[torch.Tensor] = None
         self.lambda_u = lambda_u
+        self.lambda_du = lambda_du
+        self.max_torque = max_torque
 
     def compute(
-        self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions
+        self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions, step, total_steps
     ):
         phi = quat_diff_rad(quats, goal_quat)
         quat_err = quat_diff(quats, goal_quat)
@@ -99,51 +96,48 @@ class ExponentialReward(RewardFunction):
             reward = torch.zeros_like(phi)
         else:
             reward = torch.where(quat_err[:, 3] > self.prev_quat_err[:, 3], r_q - 1.0, r_q)
+        
+        u_sq = torch.sum(actions ** 2, dim=-1)
+        u_sq_norm = u_sq / (actions.shape[-1] * self.max_torque ** 2)
 
-        in_goal = (phi <= self.th_ang_goal) & (ang_vel_err <= self.th_ang_vel_goal)
-        r_bonus = 9.0 * in_goal.float()
+        if self.prev_actions is None:
+            du_sq = torch.zeros_like(phi)
+            du_sq_norm = torch.zeros_like(phi)
+        else:
+            du_sq = torch.sum((actions - self.prev_actions) ** 2, dim=-1)
+            du_sq_norm = du_sq / (actions.shape[-1] * (2.0 * self.max_torque) ** 2)
 
-        u_norm_sq = torch.sum(actions ** 2, dim=-1)
-        r_effort = self.lambda_u * u_norm_sq
+        r_effort = self.lambda_u * u_sq_norm
+        r_smooth = self.lambda_du * du_sq_norm
 
-        final_reward = reward + r_bonus - r_effort
+        final_reward = reward - r_effort - r_smooth
         self._assert_valid_tensor(final_reward, "reward")
 
         self.prev_quat_err = quat_err.clone()
+        self.prev_actions = actions.clone()
 
         self._log_scalar("Reward_policy/actions[0, 0]", actions[0, 0])
         self._log_scalar("Reward_policy/action[0, 1]", actions[0, 1])
         self._log_scalar("Reward_policy/action[0, 2]", actions[0, 2])
+        self._log_scalar("Reward_policy/phi[0]", phi[0].item() * (180 / torch.pi))
 
         self._log_scalar("Reward_policy/max_torque", actions.abs().max().item())
 
-        self._log_scalar("Reward_policy/in_goal", in_goal.sum().item())   
-
         ################# MODE LOG #################
         self._log_scalar("Reward_policy/phi_mode", phi.mode().values.item() * (180 / torch.pi))
-        self._log_scalar("Reward_policy/ang_vel_err_mode", ang_vel_err.mode().values.item() * (180 / torch.pi))
-
-        self._log_scalar("Reward_policy/energy_mode", u_norm_sq.mode().values.item())
-        self._log_scalar("Reward_policy/max_torque_mode", actions.abs().max(dim=1).values.mode().values.item())
-
-        self._log_scalar("Reward_policy/total_mode", final_reward.mode().values.item())
-
         self._log_scalar("Reward_policy/phi_mode_count", torch.isclose(phi * (180 / torch.pi), phi.mode().values * (180 / torch.pi), atol=1e-2).sum().item())
-        self._log_scalar("Reward_policy/ang_vel_err_mode_count", torch.isclose(ang_vel_err * (180 / torch.pi), ang_vel_err.mode().values * (180 / torch.pi), atol=1e-2).sum().item())
-        
-        self._log_scalar("Reward_policy/energy_mode_count", torch.isclose(u_norm_sq, u_norm_sq.mode().values, atol=1.0).sum().item())
-        self._log_scalar("Reward_policy/max_torque_mode_count", torch.isclose(actions.abs().max(dim=1).values, actions.abs().max(dim=1).values.mode().values, atol=1.0).sum().item())
-        
-        self._log_scalar("Reward_policy/total_mode_count", torch.isclose(final_reward, final_reward.mode().values, atol=1e-2).sum().item())
 
         ################# MEAN LOG #################
         self._log_scalar("Reward_policy/phi_mean", phi.mean().item() * (180 / torch.pi))
         self._log_scalar("Reward_policy/ang_vel_err_mean", ang_vel_err.mean().item() * (180 / torch.pi))
 
-        self._log_scalar("Reward_policy/energy_mean", u_norm_sq.mean().item())
+        self._log_scalar("Reward_policy/energy_mean", u_sq.mean().item())
+        self._log_scalar("Reward_policy/r_effort", r_effort.mean().item())
+        self._log_scalar("Reward_policy/du_energy_mean", du_sq.mean().item())
+        self._log_scalar("Reward_policy/r_smooth", r_smooth.mean().item())
         self._log_scalar("Reward_policy/max_torque_mean", actions.abs().max(dim=1).values.mean().item())
 
-        self._log_scalar("Reward_policy/total_mean", final_reward.mean().item())
+        self._log_scalar("Reward_policy/reward_mean", final_reward.mean().item())
 
         self.global_step += 1
         return final_reward

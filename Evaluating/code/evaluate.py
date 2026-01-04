@@ -20,27 +20,45 @@ import os
 import re
 from pathlib import Path
 
+def deep_update(base: dict, override: dict):
+    for k, v in override.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            deep_update(base[k], v)
+        else:
+            base[k] = v
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-name",
         type=str,
-        default="evaluation_run",
-        help="Name of the evaluation run"
+        help="Name of the run to evaluate"
+    )
+    parser.add_argument(
+        "--config-name",
+        type=str,
+        help="Name of the config file of run to evaluate"
     )
     return parser.parse_args()
 
 def main():
     args = parse_args()
 
+    # ──────────────────────────────────────────────────────────────────────────
+    with open(str(Path(__file__).resolve().parent.parent.parent / "Training" / "run_config" / f"{args.config_name}.json"), "r") as f:
+        training_config = json.load(f)
+
+    deep_update(training_config, CONFIG)
+
+    CONFIG.clear()
+    CONFIG.update(training_config)
+    # ──────────────────────────────────────────────────────────────────────────
+
     if CONFIG["set_seed"]:
         set_seed(CONFIG["seed"])
     else:
         CONFIG["seed"] = torch.seed() % (2**32)
         set_seed(CONFIG["seed"])
-    
-    #################################################################################
-
 
     # ──────────────────────────────────────────────────────────────────────────
     # 🔹 Salvataggio config + informazioni di run
@@ -60,6 +78,8 @@ def main():
     # ──────────────────────────────────────────────────────────────────────────
 
     print(CONFIG)
+    
+    #################################################################################
 
     env = Satellite(
         config=CONFIG,

@@ -17,27 +17,27 @@ BASE_COLORS_GOAL = torch.tensor([[0,0,1], [0,1,0], [1,0,0]], dtype=torch.float)
 class Satellite(DRVecTask):
     def __init__(self, config, rl_device, sim_device, graphics_device_id, headless):
     
-        self.dt =                    config["sim"].get('dt', 1 / 60.0)                             # seconds
-        self.max_episode_length =    int(config["env"].get('max_episode_length', 30.0) / self.dt)  # seconds
+        self.dt =                    config["sim"].get('dt')
+        self.max_episode_length =    int(config["env"].get('max_episode_length') / self.dt)
 
-        self.env_spacing =           config["env"].get('envSpacing', 0.0)                       # meters
-        self.asset_name =            config["env"]["asset"].get('assetName', 'satellite')
-        self.asset_root =            config["env"]["asset"].get('assetRoot', str(Path(__file__).resolve().parent.parent))
-        self.asset_file =            config["env"]["asset"].get('assetFileName', 'satellite.urdf')
-        self.torque_scale =          config["env"].get('torque_scale', 1.0)
-        self.debug_arrows =          config["env"].get('debug_arrows', False)
-        self.debug_prints =          config["env"].get('debug_prints', False)
+        self.env_spacing =           config["env"].get('envSpacing')
+        self.asset_name =            config["env"]["asset"].get('assetName')
+        self.asset_root =            config["env"]["asset"].get('assetRoot')
+        self.asset_file =            config["env"]["asset"].get('assetFileName')
+        self.torque_scale =          config["env"].get('torque_scale')
+        self.debug_arrows =          config["env"].get('debug_arrows')
+        self.debug_prints =          config["env"].get('debug_prints')
 
         try:
             self.reward_fn = REWARD_MAP[config["reward"].get("reward_function")](
-                log_reward=config["reward"].get("log_reward", True),
-                log_reward_interval=config["reward"].get("log_reward_interval", 100),
+                log_reward=config["reward"].get("log_reward"),
+                log_reward_interval=config["reward"].get("log_reward_interval"),
                 **config["reward"].get(config["reward"].get("reward_function"), {}),
             )
         except Exception:
             self.reward_fn = REWARD_MAP["SimpleReward"](
-                log_reward=config["reward"].get("log_reward", True),
-                log_reward_interval=config["reward"].get("log_reward_interval", 100),
+                log_reward=config["reward"].get("log_reward"),
+                log_reward_interval=config["reward"].get("log_reward_interval"),
             )
 
         super().__init__(config, rl_device, sim_device, graphics_device_id, headless)
@@ -223,7 +223,7 @@ class Satellite(DRVecTask):
         self.rew_buf = self.reward_fn.compute(
             self.satellite_quats, self.satellite_angvels, self.satellite_angacc,
             self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
-            self.actions
+            self.actions, self.progress_buf, self.max_episode_length
         )
 
     def check_termination(self) -> None:

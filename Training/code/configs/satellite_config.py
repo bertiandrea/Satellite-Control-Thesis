@@ -9,20 +9,13 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 4096
-MAX_EPISODE_LENGTH = 80.0
-N_EPISODES = 8
 HEADLESS = False
 PROFILE = False
 DEBUG_ARROWS = True
 DEBUG_PRINTS = False
 
-ROLLOUTS = 8
-LEARNING_EPOCHS = 8
-MINI_BATCHES = 8
-
-LAMBDA_U = 0.0
-TH_ANG_GOAL = 0.25
+EPISODE_LENGTH = 180.0
+N_EPISODES = 8
 
 DR_RANDOMIZATION = False
 CAPS = False
@@ -43,14 +36,14 @@ CONFIG = {
     
     # --- env section -------------------------------------------------------
     "env": {
-        "numEnvs": NUM_ENVS,
+        "numEnvs": 4096,
         "numObservations": 15, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
         "numStates": 18, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
         "numActions": 3,
         "clipActions": 1.0,
         "clipObservations": 10.0,
 
-        "max_episode_length": MAX_EPISODE_LENGTH,
+        "max_episode_length": EPISODE_LENGTH,
 
         "envSpacing": 3.0,
         "torque_scale": 100.0,
@@ -80,10 +73,10 @@ CONFIG = {
     # --- RL / PPO hyper-params --------------------------------------------
     "rl": {
         "PPO": {
-            "num_envs": NUM_ENVS,
-            "rollouts": ROLLOUTS,
-            "learning_epochs": LEARNING_EPOCHS,
-            "mini_batches": MINI_BATCHES,
+            "num_envs": 4096,
+            "rollouts": 8,
+            "learning_epochs": 8,
+            "mini_batches": 8,
             
             "learning_rate_scheduler" : KLAdaptiveRL,
             "learning_rate_scheduler_kwargs" : {"kl_threshold": 0.016},
@@ -114,13 +107,13 @@ CONFIG = {
         },
 
         "trainer": {
-            "timesteps": int(MAX_EPISODE_LENGTH / (1.0 / 60.0) * N_EPISODES),
+            "timesteps": int(EPISODE_LENGTH / (1.0 / 60.0) * N_EPISODES),
             "disable_progressbar": DEBUG_PRINTS,
             "headless": HEADLESS,
         },
 
         "memory": {
-            "rollouts": ROLLOUTS,
+            "rollouts": 8,
         }
     },
 
@@ -128,9 +121,9 @@ CONFIG = {
     "reward": {
         "reward_function": "ExponentialReward",
         "ExponentialReward":{
-            "lambda_u": LAMBDA_U,
-            "th_ang_goal": TH_ANG_GOAL,
-            "th_ang_vel_goal": 0.1,
+            "lambda_u": 0.0,
+            "lambda_du": 0.00,
+            "max_torque": 100.0
         },
         "log_reward": True,
         "log_reward_interval": 100,  # steps
