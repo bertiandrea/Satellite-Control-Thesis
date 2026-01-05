@@ -1,6 +1,6 @@
 {
     "set_seed": true,
-    "seed": 42000,
+    "seed": 420,
     "profile": false,
     "physics_engine": "physx",
     "rl_device": "cuda:0",
