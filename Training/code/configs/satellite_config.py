@@ -14,7 +14,7 @@ PROFILE = False
 DEBUG_ARROWS = True
 DEBUG_PRINTS = False
 
-EPISODE_LENGTH = 180.0
+EPISODE_LENGTH = 0.0
 N_EPISODES = 8
 
 DR_RANDOMIZATION = False
@@ -145,6 +145,7 @@ CONFIG = {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
                 "range": [0.9, 1.1], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.1,
             },
             "actions": {
                 "distribution": "uniform", # "uniform" or "gaussian"
