@@ -56,7 +56,7 @@ CONFIG = {
             "rewards_shaper" : lambda rewards, timestep, timesteps: rewards * 0.01, # NOT SERIALIZABLE
         },
         "trainer": {
-            "timesteps": int(MAX_EPISODE_LENGTH / ( 1.0 / 60.0 )),
+            "timesteps": int(EPISODE_LENGTH / ( 1.0 / 60.0 )),
             "disable_progressbar": False,
             "headless": HEADLESS,
             "stochastic_evaluation": False,
