@@ -11,7 +11,7 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 SEED = 420
 NUM_ENVS = 4096
-MAX_EPISODE_LENGTH = 240.0
+EPISODE_LENGTH = 240.0
 HEADLESS = False
 DEBUG_ARROWS = True
 LOG_TRAJECTORIES = True
@@ -32,7 +32,7 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "max_episode_length": MAX_EPISODE_LENGTH,
+        "max_episode_length": EPISODE_LENGTH,
 
         "debug_arrows": DEBUG_ARROWS,
         "debug_prints": False,
@@ -83,6 +83,7 @@ CONFIG = {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
                 "range": [0.9, 1.1], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.1,
             },
             "actions": {
                 "distribution": "uniform", # "uniform" or "gaussian"
