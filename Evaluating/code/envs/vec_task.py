@@ -376,29 +376,24 @@ class DRVecTask(VecTask):
         for param in ["observations", "actions"]:
             dist = dr_params[param]["distribution"]
             operation = dr_params[param]["operation"]
+
+            q_noise = dr_params[param].get("quaternion_noise", 0.0)
+            def noise_lambda_quat(q, q_noise=q_noise):
+                axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
+                axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
+                angle = torch.rand((q.shape[0], 1), device=q.device, dtype=q.dtype) * (q_noise * math.pi)
+                dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
+                qn = quat_mul(dq, q)
+                return qn / (qn.norm(dim=1, keepdim=True) + 1e-8)
+            
             if dist == 'gaussian':
                 mu, std = dr_params[param]["range"]
                 if operation == "scaling":
                     def noise_lambda(tensor, mu=mu, std=std):
                         return tensor * (torch.randn_like(tensor) * std + mu)
-                    def noise_lambda_quat(q, mu=mu, std=std):
-                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
-                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
-                        scale = torch.randn((q.shape[0], 1), device=q.device, dtype=q.dtype) * std + mu
-                        angle = scale * 2.0 * torch.acos(torch.clamp(q[:, 3], -1.0, 1.0)).unsqueeze(1)
-                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
-                        qn = quat_mul(dq, q)
-                        return qn / qn.norm(dim=1, keepdim=True)
                 elif operation == "addition":
                     def noise_lambda(tensor, mu=mu, std=std):
                         return tensor + (torch.randn_like(tensor) * std + mu)
-                    def noise_lambda_quat(q, mu=mu, std=std):
-                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
-                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
-                        angle = torch.randn((q.shape[0], 1), device=q.device, dtype=q.dtype) * std + mu
-                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
-                        qn = quat_mul(dq, q)
-                        return qn / qn.norm(dim=1, keepdim=True)
                 else:
                     raise ValueError("Unsupported operation type")
             elif dist == 'uniform':
@@ -406,24 +401,9 @@ class DRVecTask(VecTask):
                 if operation == "scaling":
                     def noise_lambda(tensor, lo=lo, hi=hi):
                         return tensor * (torch.rand_like(tensor) * (hi - lo) + lo)
-                    def noise_lambda_quat(q, lo=lo, hi=hi):
-                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
-                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
-                        scale = torch.rand((q.shape[0], 1), device=q.device, dtype=q.dtype) * (hi - lo) + lo
-                        angle = scale * 2.0 * torch.acos(torch.clamp(q[:, 3], -1.0, 1.0)).unsqueeze(1)
-                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
-                        qn = quat_mul(dq, q)
-                        return qn / qn.norm(dim=1, keepdim=True)
                 elif operation == "addition":
                     def noise_lambda(tensor, lo=lo, hi=hi):
                         return tensor + (torch.rand_like(tensor) * (hi - lo) + lo)
-                    def noise_lambda_quat(q, lo=lo, hi=hi):
-                        axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
-                        axis = axis / (axis.norm(dim=1, keepdim=True) + 1e-8)
-                        angle = torch.rand((q.shape[0], 1), device=q.device, dtype=q.dtype) * (hi - lo) + lo
-                        dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=1)
-                        qn = quat_mul(dq, q)
-                        return qn / qn.norm(dim=1, keepdim=True)
                 else:
                     raise ValueError("Unsupported operation type")
             else:
