@@ -153,9 +153,6 @@ class VecTask(Env):
         self.progress_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.long)
         self.extras = {}
-        # Utility Identity Quaternion
-        self.I = torch.zeros((self.num_envs, 4), device=self.device, dtype=torch.float)
-        self.I[:, 3] = 1.0
 
     def create_sim(self, compute_device: int, graphics_device: int, physics_engine, sim_params: gymapi.SimParams):
         sim = _create_sim_once(self.gym, compute_device, graphics_device, physics_engine, sim_params)
@@ -206,7 +203,7 @@ class VecTask(Env):
                 q_noise = quat_mul(self.obs_buf[:, 0:4], quat_conjugate(q_clean))
                 self.obs_buf[:, 4:8] = quat_mul(q_noise, self.obs_buf[:, 4:8])
                 self.obs_buf[:, 4:8] = self.obs_buf[:, 4:8] / (self.obs_buf[:, 4:8].norm(dim=1, keepdim=True) + 1e-8)
-                self.obs_buf[:, 8] = quat_diff_rad(self.obs_buf[:, 4:8], self.I)
+                self.obs_buf[:, 8] = 2.0 * torch.acos(self.obs_buf[:, 7].abs().clamp(max=1.0))
                 self.obs_buf[:, 9: ] = self.dr_randomizations['observations']['noise_lambda'](self.obs_buf[:, 9: ])
                 
                 if self.debug_prints:
