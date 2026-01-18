@@ -4,7 +4,7 @@ import re
 import shutil
 import sys
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # --- CONFIGURAZIONE ---
@@ -86,6 +86,9 @@ def main():
                     help="relative to root (default: %(default)s)")
     ap.add_argument("--dry-run", action="store_true",
                     help="only for move mode: print operations without moving")
+    ap.add_argument("--logs-delta-s", type=int, default=5,
+                    help="delta seconds applied to logs timestamp matching (default: %(default)s)")
+
     args = ap.parse_args()
 
     root = Path(args.root).expanduser().resolve()
@@ -136,9 +139,14 @@ def main():
             errors.append(f"Agente {agent_id} ({prefix}): Nessuna cartella RUN trovata per {config.name} (atteso {ts})")
             continue
 
-        log_file = logs_by_ts.get(ts)
+        log_file = None
+        for off in range(0, args.logs_delta_s + 1):
+            log_file = logs_by_ts.get(ts + timedelta(seconds=off))
+            if log_file is not None:
+                break
+        
         if log_file is None:
-            errors.append(f"Agente {agent_id} ({prefix}): Nessun file LOG trovato per {config.name} (atteso {ts})")
+            errors.append(f"Agente {agent_id} ({prefix}): Nessun file LOG trovato per {config.name}")
             continue
 
         if args.mode == "move":
