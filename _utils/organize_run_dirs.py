@@ -14,21 +14,28 @@ EXPECTED_COUNTS = Counter(EXPECTED_SEEDS)
 EXPECTED_N = len(EXPECTED_SEEDS)
 
 # Config file example:
-# ...agent_28800_20260109_100400.json
-CFG_RE = re.compile(r"agent_(?P<a>\d+?)_(?P<y>\d{8})_(?P<tm>\d{6})\.json$")
+# evaluate_config_runs_base_..._agent_28800_20260109_100400.json
+CFG_RE = re.compile(r"^(?P<prefix>.*)agent_(?P<a>\d+?)_(?P<y>\d{8})_(?P<tm>\d{6})\.json$")
 
 # Run dir example:
-# 2026_Jan09_10-04-00...
-RUN_RE = re.compile(r"(?P<y>\d{4})_(?P<mo>[A-Z][a-z]{2})(?P<d>\d{2})_(?P<h>\d{2})-(?P<m>\d{2})-(?P<s>\d{2})")
+# Jan09_10-04-00...
+RUN_RE = re.compile(r"(?P<mo>[A-Z][a-z]{2})(?P<d>\d{2})_(?P<h>\d{2})-(?P<m>\d{2})-(?P<s>\d{2})")
+
+def base_dir(p: Path) -> Path:
+    parent = p.parent
+    return parent.parent if parent.name.startswith("agent_") else parent
 
 def get_ts_cfg(name: str) -> datetime:
     m = CFG_RE.search(name)
-    return datetime.strptime(m.group("y") + m.group("tm"), "%Y%m%d%H%M%S")
+    return datetime.strptime(
+        m.group("y") + m.group("tm"),
+        "%Y%m%d%H%M%S"
+    ).replace(year=9999)
 
 def get_ts_run(name: str) -> datetime:
     m = RUN_RE.search(name)
     return datetime.strptime(
-        f"{m.group('y')} {m.group('mo')} {m.group('d')} {m.group('h')}:{m.group('m')}:{m.group('s')}",
+        f"9999 {m.group('mo')} {m.group('d')} {m.group('h')}:{m.group('m')}:{m.group('s')}",
         "%Y %b %d %H:%M:%S",
     )
 
@@ -48,10 +55,10 @@ def mv(src: Path, dst: Path, dry: bool) -> None:
     dst = dst.resolve()
     if src == dst:
         return
-    dst.parent.mkdir(parents=True, exist_ok=True)
     if dry:
         print(f"[DRY] mv {src} -> {dst}")
     else:
+        dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), str(dst))
         print(f"[OK ] mv {src} -> {dst}")
 
@@ -82,47 +89,58 @@ def main():
     run_dirs = [d for d in runs_root.rglob("*") if d.is_dir() and RUN_RE.search(d.name)]
 
     errors = []
-    seeds_by_agent = {}
+    seeds_by_key = {}
     planned_moves = []
 
     cfg_by_ts = {get_ts_cfg(p.name): p for p in configs}
     runs_by_ts = {get_ts_run(d.name): d for d in run_dirs}
 
     for ts, config in sorted(cfg_by_ts.items()):
-        agent_id = CFG_RE.search(config.name).group("a")
+        m = CFG_RE.search(config.name)
+        prefix = m.group("prefix").rstrip("_")
+        agent_id = m.group("a")
 
         try:
             with open(config, "r") as f:
                 data = json.load(f)
         except Exception as e:
-            errors.append(f"Agente {agent_id}: Impossibile leggere {config.name} ({e})")
+            errors.append(f"Agente {agent_id} ({prefix}): Impossibile leggere {config.name} ({e})")
             continue
 
         seed = find_seed(data)
         if seed is None:
-            errors.append(f"Agente {agent_id}: Seed non trovato in {config.name}")
+            errors.append(f"Agente {agent_id} ({prefix}): Seed non trovato in {config.name}")
             continue
-        seeds_by_agent.setdefault(agent_id, []).append(seed)
+
+        seeds_by_key.setdefault((prefix, agent_id), []).append(seed)
 
         run_dir = runs_by_ts.get(ts)
         if run_dir is None:
-            errors.append(f"Agente {agent_id}: Nessuna cartella RUN trovata per {config.name} (atteso {ts})")
+            errors.append(f"Agente {agent_id} ({prefix}): Nessuna cartella RUN trovata per {config.name} (atteso {ts})")
             continue
 
         if args.mode == "move":
             agent_dir = f"agent_{agent_id}"
-            planned_moves.append((config, cfg_root / agent_dir / config.name))
-            planned_moves.append((run_dir, runs_root / agent_dir / run_dir.name))
 
-    # --- SEEDS check: match ESATTO (numero + valori + conteggi), per agente ---
-    for agent_id, seeds in seeds_by_agent.items():
+            cfg_base = config.parent.parent if config.parent.name.startswith("agent_") else config.parent
+            run_base = run_dir.parent.parent if run_dir.parent.name.startswith("agent_") else run_dir.parent
+
+            planned_moves.append((config, cfg_base / agent_dir / config.name))
+            planned_moves.append((run_dir, run_base / agent_dir / run_dir.name))
+
+    # --- SEEDS check ---
+    for (prefix, agent_id), seeds in seeds_by_key.items():
         found_counts = Counter(seeds)
 
         if len(seeds) != EXPECTED_N:
-            errors.append(f"Agente {agent_id}: numero seed trovato {len(seeds)} (atteso {EXPECTED_N})")
+            errors.append(
+                f"Agente {agent_id} ({prefix}): numero seed trovato {len(seeds)} (atteso {EXPECTED_N})"
+            )
 
         if found_counts != EXPECTED_COUNTS:
-            errors.append(f"Agente {agent_id}: seed trovati {dict(found_counts)} (attesi {dict(EXPECTED_COUNTS)})")
+            errors.append(
+                f"Agente {agent_id} ({prefix}): seed trovati {dict(found_counts)} (attesi {dict(EXPECTED_COUNTS)})"
+            )
 
     if errors:
         print(f"\n[FAIL] {args.mode.upper()} fallito con {len(errors)} errori:")
