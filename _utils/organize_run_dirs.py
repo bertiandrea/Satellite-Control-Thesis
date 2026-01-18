@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import json
 import re
@@ -21,6 +20,10 @@ CFG_RE = re.compile(r"^(?P<prefix>.*)agent_(?P<a>\d+?)_(?P<y>\d{8})_(?P<tm>\d{6}
 # Jan09_10-04-00...
 RUN_RE = re.compile(r"(?P<mo>[A-Z][a-z]{2})(?P<d>\d{2})_(?P<h>\d{2})-(?P<m>\d{2})-(?P<s>\d{2})")
 
+# Log file example:
+# trajectories_20260109_100400.pt
+LOGS_RE = re.compile(r"^trajectories_(?P<y>\d{8})_(?P<tm>\d{6})\.pt$")
+
 def base_dir(p: Path) -> Path:
     parent = p.parent
     return parent.parent if parent.name.startswith("agent_") else parent
@@ -38,6 +41,13 @@ def get_ts_run(name: str) -> datetime:
         f"9999 {m.group('mo')} {m.group('d')} {m.group('h')}:{m.group('m')}:{m.group('s')}",
         "%Y %b %d %H:%M:%S",
     )
+
+def get_ts_logs(name: str) -> datetime:
+    m = LOGS_RE.search(name)
+    return datetime.strptime(
+        m.group("y") + m.group("tm"),
+        "%Y%m%d%H%M%S"
+    ).replace(year=9999)
 
 def find_seed(data):
     if isinstance(data, dict):
@@ -72,6 +82,8 @@ def main():
                     help="relative to root (default: %(default)s)")
     ap.add_argument("--runs-dir", default="runs",
                     help="relative to root (default: %(default)s)")
+    ap.add_argument("--logs-dir", default="logs",
+                    help="relative to root (default: %(default)s)")
     ap.add_argument("--dry-run", action="store_true",
                     help="only for move mode: print operations without moving")
     args = ap.parse_args()
@@ -79,14 +91,18 @@ def main():
     root = Path(args.root).expanduser().resolve()
     cfg_root = (root / args.config_dir).resolve()
     runs_root = (root / args.runs_dir).resolve()
+    logs_root = (root / args.logs_dir).resolve()
 
     if not cfg_root.is_dir():
         raise SystemExit(f"config dir not found: {cfg_root}")
     if not runs_root.is_dir():
         raise SystemExit(f"runs dir not found: {runs_root}")
+    if not logs_root.is_dir():
+        raise SystemExit(f"logs dir not found: {logs_root}")
 
     configs = [p for p in cfg_root.rglob("*.json") if p.is_file() and CFG_RE.search(p.name)]
     run_dirs = [d for d in runs_root.rglob("*") if d.is_dir() and RUN_RE.search(d.name)]
+    logs = [p for p in logs_root.rglob("*.pt") if p.is_file() and LOGS_RE.search(p.name)]
 
     errors = []
     seeds_by_key = {}
@@ -94,6 +110,7 @@ def main():
 
     cfg_by_ts = {get_ts_cfg(p.name): p for p in configs}
     runs_by_ts = {get_ts_run(d.name): d for d in run_dirs}
+    logs_by_ts = {get_ts_logs(p.name): p for p in logs}
 
     for ts, config in sorted(cfg_by_ts.items()):
         m = CFG_RE.search(config.name)
@@ -119,14 +136,21 @@ def main():
             errors.append(f"Agente {agent_id} ({prefix}): Nessuna cartella RUN trovata per {config.name} (atteso {ts})")
             continue
 
+        log_file = logs_by_ts.get(ts)
+        if log_file is None:
+            errors.append(f"Agente {agent_id} ({prefix}): Nessun file LOG trovato per {config.name} (atteso {ts})")
+            continue
+
         if args.mode == "move":
             agent_dir = f"agent_{agent_id}"
 
             cfg_base = config.parent.parent if config.parent.name.startswith("agent_") else config.parent
             run_base = run_dir.parent.parent if run_dir.parent.name.startswith("agent_") else run_dir.parent
+            log_base = log_file.parent.parent if log_file.parent.name.startswith("agent_") else log_file.parent
 
             planned_moves.append((config, cfg_base / agent_dir / config.name))
             planned_moves.append((run_dir, run_base / agent_dir / run_dir.name))
+            planned_moves.append((log_file, log_base / agent_dir / log_file.name))
 
     # --- SEEDS check ---
     for (prefix, agent_id), seeds in seeds_by_key.items():
