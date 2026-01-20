@@ -195,20 +195,16 @@ class VecTask(Env):
 
             if self.randomize:
                 if self.debug_prints:
-                    print("Observations BEFORE randomization:")
+                    print("Observations and States BEFORE randomization:")
                     print(f"obs_buf[0]: {', '.join(f'{v:.2f}' for v in self.obs_buf[0].tolist())}")
-                
-                q_clean     = self.obs_buf[:, 0:4].clone()                
-                self.obs_buf[:, 0:4] = self.dr_randomizations['observations']['noise_lambda_quat'](self.obs_buf[:, 0:4])
-                q_noise = quat_mul(self.obs_buf[:, 0:4], quat_conjugate(q_clean))
-                self.obs_buf[:, 4:8] = quat_mul(q_noise, self.obs_buf[:, 4:8])
-                self.obs_buf[:, 4:8] = self.obs_buf[:, 4:8] / (self.obs_buf[:, 4:8].norm(dim=1, keepdim=True) + 1e-8)
-                self.obs_buf[:, 8] = 2.0 * torch.acos(self.obs_buf[:, 7].abs().clamp(max=1.0))
-                self.obs_buf[:, 9: ] = self.dr_randomizations['observations']['noise_lambda'](self.obs_buf[:, 9: ])
-                
+                    print(f"state_buf[0]: {', '.join(f'{v:.2f}' for v in self.states_buf[0].tolist())}")
+
+                self.states_buf = self.apply_noise_on_custom_buffer(self.states_buf, 'states')
+
                 if self.debug_prints:
-                    print("Observations AFTER randomization:")
+                    print("Observations and States AFTER randomization:")
                     print(f"obs_buf[0]: {', '.join(f'{v:.2f}' for v in self.obs_buf[0].tolist())}")
+                    print(f"state_buf[0]: {', '.join(f'{v:.2f}' for v in self.states_buf[0].tolist())}")
 
             self.obs_states_dict["obs"] = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
             self.obs_states_dict["states"] = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
@@ -346,6 +342,16 @@ class DRVecTask(VecTask):
 
         super().__init__(config, rl_device, sim_device, graphics_device_id, headless)
 
+    def apply_noise_on_custom_buffer(self, buf, buf_type):
+        q_clean     = buf[:, 0:4].clone()                
+        buf[:, 0:4] = self.dr_randomizations[buf_type]['noise_lambda_quat'](buf[:, 0:4])
+        q_noise = quat_mul(buf[:, 0:4], quat_conjugate(q_clean))
+        buf[:, 4:8] = quat_mul(q_noise, buf[:, 4:8])
+        buf[:, 4:8] = buf[:, 4:8] / (buf[:, 4:8].norm(dim=1, keepdim=True) + 1e-8)
+        buf[:, 8] = 2.0 * torch.acos(buf[:, 7].abs().clamp(max=1.0))
+        buf[:, 9: ] = self.dr_randomizations[buf_type]['noise_lambda'](buf[:, 9: ])
+        return buf
+
     def _sample_random_val(self, params):
         if params["distribution"] == "gaussian":
             mu, var = params["range"]
@@ -378,7 +384,7 @@ class DRVecTask(VecTask):
         setattr(rb_prop, attr_name, new_val)
 
     def _init_randomization_functions(self, dr_params):
-        for param in ["observations", "actions"]:
+        for param in ["observations", "states", "actions"]:
             dist = dr_params[param]["distribution"]
             operation = dr_params[param]["operation"]
 

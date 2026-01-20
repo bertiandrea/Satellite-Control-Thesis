@@ -147,6 +147,12 @@ CONFIG = {
                 "range": [0.9, 1.1], # gaussian: [mu, var], uniform: [low, high]
                 "quaternion_noise": 0.1,
             },
+            "states": {
+                "distribution": "uniform", # "uniform" or "gaussian"
+                "operation": "scaling", # "scaling" or "addition"
+                "range": [0.9, 1.1], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.1,
+            },
             "actions": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
