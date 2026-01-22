@@ -15,6 +15,13 @@ TAGS = ["Reward_policy/phi_mean", "Reward_policy/energy_mean",
 LOG_DISPLAY = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
         "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
 
+THRESHOLDS = {
+    "Reward_policy/phi_mean": 1,
+    "Reward_policy/energy_mean": 100,
+    "Reward_policy/du_energy_mean": 1,
+    "Reward_policy/max_torque_mean": 1,
+}
+
 def load_data(files):
     step_data = defaultdict(lambda: defaultdict(list))
     for f in files:
@@ -64,6 +71,11 @@ def main():
             plt.yscale('log')
         # -----------------------
 
+        thr = THRESHOLDS.get(t, None)
+        if thr is not None:
+            plt.axhline(thr, linestyle="--", linewidth=1.2, color="red", label="_nolegend_")
+
+        legend_below_flags = []
         for i, gid in enumerate(sorted(all_results.keys(), key=nat_key)):
             if t not in all_results[gid]: continue
 
@@ -80,9 +92,26 @@ def main():
             line, = plt.plot(d["x"], d["m"], label=f"{gid} ({last_val:.2f})", color=color, linewidth=1.5)
             #plt.fill_between(d["x"], d["min"], d["max"], color=line.get_color(), alpha=0.2)
 
+            below = (thr is not None) and (last_val < thr)
+            legend_below_flags.append(below)
+
         plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""))
         plt.grid(True, which="both", alpha=0.3)
-        plt.legend(fontsize='x-small', ncol=2)
+        leg = plt.legend(fontsize='x-small', ncol=2)
+        if leg is not None:
+            texts = leg.get_texts()
+            for txt, below in zip(texts, legend_below_flags):
+                if below:
+                    txt.set_color("black")
+                    txt.set_bbox(dict(
+                        facecolor="yellow",
+                        edgecolor="none",
+                        alpha=0.6,
+                        boxstyle="round,pad=0.2"
+                    ))
+                else:
+                    txt.set_bbox(None)
+
         plt.xlabel("Steps")
         plt.ylabel("Value")
         plt.tight_layout()
