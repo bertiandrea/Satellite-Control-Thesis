@@ -1,9 +1,13 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import re
 from pathlib import Path
 from collections import defaultdict
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+def nat_key(s):
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
 TAGS = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
         "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
@@ -50,7 +54,7 @@ def main():
     
     all_results = {gid: load_data(files) for gid, files in grouped.items()}
 
-    unique_groups = sorted(list(set(gid.split('/')[0] for gid in all_results.keys())))
+    unique_groups = sorted(list(set(gid.split('/')[0] for gid in all_results.keys())), key=nat_key)
 
     for t in TAGS:
         plt.figure(figsize=(12, 7))
@@ -60,24 +64,24 @@ def main():
             plt.yscale('log')
         # -----------------------
 
-        for i, gid in enumerate(sorted(all_results.keys())):
+        for i, gid in enumerate(sorted(all_results.keys(), key=nat_key)):
             if t not in all_results[gid]: continue
 
             group_name = gid.split('/')[0]
             group_idx = unique_groups.index(group_name)
             base_color = plt.cm.tab10(group_idx % 10) 
-            runs_in_group = [g for g in sorted(all_results.keys()) if g.startswith(group_name)]
+            runs_in_group = [g for g in sorted(all_results.keys(), key=nat_key) if g.startswith(group_name)]
             run_idx = runs_in_group.index(gid)
             alpha_val = max(0.3, 1.0 - (run_idx * 0.12))
             color = (base_color[0], base_color[1], base_color[2], alpha_val)
             
             d = all_results[gid][t]
-            last_val = d["m"][-1] if len(d["m"]) > 0 else 0.0
+            last_val = np.mean(d["m"][-max(1, int(len(d["m"]) * 0.05)):]) if len(d["m"]) > 0 else 0.0
             line, = plt.plot(d["x"], d["m"], label=f"{gid} ({last_val:.2f})", color=color, linewidth=1.5)
             #plt.fill_between(d["x"], d["min"], d["max"], color=line.get_color(), alpha=0.2)
 
         plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""))
-        plt.grid(True, which="both", alpha=0.3) # "both" per vedere la griglia logaritmica
+        plt.grid(True, which="both", alpha=0.3)
         plt.legend(fontsize='x-small', ncol=2)
         plt.xlabel("Steps")
         plt.ylabel("Value")
