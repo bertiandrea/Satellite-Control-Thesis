@@ -8,10 +8,8 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 TAGS = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
         "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
 
-LOG_DISPLAY = [
-    "Reward_policy/phi_mean",
-    "Reward_policy/max_torque_mean"
-]
+LOG_DISPLAY = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
+        "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
 
 def load_data(files):
     step_data = defaultdict(lambda: defaultdict(list))
@@ -52,21 +50,30 @@ def main():
     
     all_results = {gid: load_data(files) for gid, files in grouped.items()}
 
+    unique_groups = sorted(list(set(gid.split('/')[0] for gid in all_results.keys())))
+
     for t in TAGS:
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(12, 7))
         
         # --- PATCH LOG SCALE ---
         if t in LOG_DISPLAY:
             plt.yscale('log')
         # -----------------------
 
-        colors = plt.cm.get_cmap('tab20', len(all_results))
-
         for i, gid in enumerate(sorted(all_results.keys())):
             if t not in all_results[gid]: continue
+
+            group_name = gid.split('/')[0]
+            group_idx = unique_groups.index(group_name)
+            base_color = plt.cm.tab10(group_idx % 10) 
+            runs_in_group = [g for g in sorted(all_results.keys()) if g.startswith(group_name)]
+            run_idx = runs_in_group.index(gid)
+            alpha_val = max(0.3, 1.0 - (run_idx * 0.12))
+            color = (base_color[0], base_color[1], base_color[2], alpha_val)
             
             d = all_results[gid][t]
-            line, = plt.plot(d["x"], d["m"], label=gid, color=colors(i), linewidth=1.5)
+            last_val = d["m"][-1] if len(d["m"]) > 0 else 0.0
+            line, = plt.plot(d["x"], d["m"], label=f"{gid} ({last_val:.2f})", color=color, linewidth=1.5)
             #plt.fill_between(d["x"], d["min"], d["max"], color=line.get_color(), alpha=0.2)
 
         plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""))
