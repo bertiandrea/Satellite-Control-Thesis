@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import random
 
 N_ENV_PLOT = 32
-LOG_PATH = "../Evaluating/logs/trajectories_20251113_224826.pt"
+LOG_PATH = "../Evaluating/logs/trajectories_XXXXXXXX_XXXXXX.pt"
 
 print(f"Caricamento log da: {LOG_PATH}")
 data = torch.load(LOG_PATH, map_location="cpu", weights_only=True)
