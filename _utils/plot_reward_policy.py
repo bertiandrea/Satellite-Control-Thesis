@@ -7,7 +7,7 @@ from collections import defaultdict
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 def nat_key(s):
-    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', str(s))]
 
 TAGS = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
         "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
