@@ -11,7 +11,7 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 SEED = 420
 NUM_ENVS = 4096
-EPISODE_LENGTH = 240.0
+EPISODE_LENGTH = 360.0
 HEADLESS = False
 DEBUG_ARROWS = True
 LOG_TRAJECTORIES = True
@@ -82,19 +82,19 @@ CONFIG = {
             "observations": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
-                "range": [1.0, 1.0], # gaussian: [mu, var], uniform: [low, high]
-                "quaternion_noise": 0.0,
+                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.01,
             },
             "states": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
-                "range": [1.0, 1.0], # gaussian: [mu, var], uniform: [low, high]
-                "quaternion_noise": 0.0,
+                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.01,
             },
             "actions": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
-                "range": [1.0, 1.0], # gaussian: [mu, var], uniform: [low, high]
+                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
             },
             "actor_params": {
                 "satellite": {
@@ -103,7 +103,7 @@ CONFIG = {
                         "inertia": {
                             "distribution": "uniform", # "uniform" or "gaussian"
                             "operation": "scaling", # "scaling" or "addition"
-                            "range": [1.0, 1.0], # gaussian: [mu, var], uniform: [low, high]
+                            "range": [0.90, 1.10], # gaussian: [mu, var], uniform: [low, high]
                         }
                     }
                 }
