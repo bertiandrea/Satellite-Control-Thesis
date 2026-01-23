@@ -92,9 +92,9 @@
     },
     "CAPS": {
         "enabled": false,
-        "lambda_temporal_smoothness": 1e-09,
-        "lambda_spatial_smoothness": 1e-09,
-        "noise_std": 0.01
+        "lambda_temporal_smoothness": 1e-00,
+        "lambda_spatial_smoothness": 1e-00,
+        "noise_std": 0.00
     },
     "dr_randomization": {
         "enabled": false,
@@ -103,16 +103,26 @@
                 "distribution": "uniform",
                 "operation": "scaling",
                 "range": [
-                    0.9,
-                    1.1
-                ]
+                    0.99,
+                    1.01
+                ],
+                "quaternion_noise": 0.01
+            },
+            "states": {
+                "distribution": "uniform",
+                "operation": "scaling",
+                "range": [
+                    0.99,
+                    1.01
+                ],
+                "quaternion_noise": 0.01
             },
             "actions": {
                 "distribution": "uniform",
                 "operation": "scaling",
                 "range": [
-                    0.9,
-                    1.1
+                    0.99,
+                    1.01
                 ]
             },
             "actor_params": {
@@ -123,8 +133,8 @@
                             "distribution": "uniform",
                             "operation": "scaling",
                             "range": [
-                                0.9,
-                                1.1
+                                0.90,
+                                1.10
                             ]
                         }
                     }

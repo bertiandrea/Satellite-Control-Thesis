@@ -51,7 +51,7 @@
             },
             "state_preprocessor": "<class 'skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler'>",
             "value_preprocessor": "<class 'skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler'>",
-            "rewards_shaper": "<function <lambda> at 0x7fb94786b3a0>",
+            "rewards_shaper": "<function <lambda> at 0x7f8d919303a0>",
             "discount_factor": 0.99,
             "learning_rate": 0.001,
             "grad_norm_clip": 1.0,
@@ -72,7 +72,7 @@
             }
         },
         "trainer": {
-            "timesteps": 86400,
+            "timesteps": 172800,
             "disable_progressbar": false,
             "headless": false
         },
@@ -94,7 +94,7 @@
         "enabled": false,
         "lambda_temporal_smoothness": 1e-00,
         "lambda_spatial_smoothness": 1e-00,
-        "noise_std": 0.01
+        "noise_std": 0.00
     },
     "dr_randomization": {
         "enabled": false,
