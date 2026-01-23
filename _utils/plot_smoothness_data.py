@@ -6,30 +6,29 @@ import os
 LOG_DIR = "../Evaluating/logs/"
 
 file_to_name = {
-    "trajectories_20251113_224826.pt": "Baseline Fixed Seed",
-    "trajectories_20251113_224838.pt": "Baseline Random Seed 1",
-    "trajectories_20251114_082538.pt": "Baseline Random Seed 2",
+    "logs_delta_lambda_normalization/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05",
+    "logs_delta_lambda_normalization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05 + Noise",
 
-    "trajectories_20251114_082603.pt": "CAPS T:0.1 S:0.01 R:0.5",
-    "trajectories_20251114_105501.pt": "CAPS T:0.1 S:0.1 R:0.5",
+    "logs_delta_lambda_normalization_randomization/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05 + Randomization",
+    "logs_delta_lambda_normalization_randomization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05 + Randomization + Noise",
+
+    "logs_CAPS/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01",
+    "logs_CAPS_noise/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01 + Noise",
+
+    "logs_CAPS_randomization/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01 + Randomization",
+    "logs_CAPS_randomization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01 + Randomization + Noise",
 }
 
 # ------------------- FFT + CoM -------------------
-def compute_fft(actions, fps=60):
+def compute_fft(actions, fps):
     T, N, D = actions.shape
-    freqs = torch.fft.rfftfreq(T, d=1.0/fps)
-    all_fft, all_com = [], []
-
-    for i in range(N):
-        fft_env = torch.fft.rfft(actions[:, i, :], dim=0)
-        amp_env = fft_env.abs() / T
-        all_fft.append(amp_env)
-        all_com.append((amp_env * freqs[:, None]).sum(dim=0) / amp_env.sum(dim=0))
-
-    all_fft = torch.stack(all_fft)
-    all_com = torch.stack(all_com)
-
-    return all_fft.mean(dim=0), all_fft.std(dim=0), freqs, all_com.mean(dim=0), all_com.std(dim=0)
+    freqs = torch.fft.rfftfreq(T, d=1.0 / fps)
+    fft_envs = torch.fft.rfft(actions, dim=0) # [Freq, N, D]
+    amp_envs = fft_envs.abs() / T
+    mean_fft = amp_envs.mean(dim=1)
+    std_fft = amp_envs.std(dim=1)
+    com_envs = (amp_envs * freqs[:, None, None]).sum(dim=0) / amp_envs.sum(dim=0)
+    return mean_fft, std_fft, freqs, com_envs.mean(dim=0), com_envs.std(dim=0)
 
 # ------------------- FFT PLOT -------------------
 def plot_fft(runs, title, labels):

@@ -6,16 +6,25 @@ import os
 LOG_DIR = "../Evaluating/logs/"
 
 file_to_name = {
-    "trajectories_20251113_224826.pt": "Baseline Fixed Seed",
-    "trajectories_20251113_224838.pt": "Baseline Random Seed 1",
-    "trajectories_20251114_082538.pt": "Baseline Random Seed 2",
-    "trajectories_20251114_082603.pt": "CAPS T:0.1 S:0.01 R:0.5",
-    "trajectories_20251114_082643.pt": "Random N:10% R:10% on baseline",
-    "trajectories_20251114_095235.pt": "Random N:10% R:50% on baseline",
-    "trajectories_20251114_100557.pt": "Random N:10% R:10% on 10% 10%",
-    "trajectories_20251114_100623.pt": "Random N:10% R:50% on 10% 10%",
-    "trajectories_20251114_105501.pt": "CAPS T:0.1 S:0.1 R:0.5",
-    "trajectories_20251114_113735.pt": "Explosion",
+    "logs_base/trajectories_XXXXXXXX_XXXXXX.pt": "Baseline",
+    "logs_base_noise/trajectories_XXXXXXXX_XXXXXX.pt": "Baseline + Noise",
+
+    "logs_lambda_normalization/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1",
+    "logs_lambda_normalization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 + Noise",
+
+    "logs_delta_lambda_normalization/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05",
+    "logs_delta_lambda_normalization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05 + Noise",
+
+    "logs_delta_lambda_normalization_randomization/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05 + Randomization",
+    "logs_delta_lambda_normalization_randomization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "Normalization sum(act[t])^2:0.1 sum(act[t]-act[t-1])^2:0.05 + Randomization + Noise",
+
+    "logs_CAPS/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01",
+    "logs_CAPS_noise/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01 + Noise",
+
+    "logs_CAPS_randomization/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01 + Randomization",
+    "logs_CAPS_randomization_noise/trajectories_XXXXXXXX_XXXXXX.pt": "CAPS T:1e-9 S:1e-9 R:0.01 + Randomization + Noise",
+
+    "logs_explosion/trajectories_XXXXXXXX_XXXXXX.pt": "Explosion",
 }
 
 def plot_component_across_files(title, list_of_data, labels, non_negative=False, log_scale=False):
