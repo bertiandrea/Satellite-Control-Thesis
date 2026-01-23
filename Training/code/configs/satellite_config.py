@@ -14,7 +14,7 @@ PROFILE = False
 DEBUG_ARROWS = True
 DEBUG_PRINTS = False
 
-EPISODE_LENGTH = 0.0
+EPISODE_LENGTH = 180.0
 N_EPISODES = 8
 
 DR_RANDOMIZATION = False
@@ -132,9 +132,9 @@ CONFIG = {
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
         "enabled": CAPS,
-        "lambda_temporal_smoothness": 1e-9,  # λ_t
-        "lambda_spatial_smoothness": 1e-9,   # λ_s
-        "noise_std": 0.01,                   # σ
+        "lambda_temporal_smoothness": 1e-0,  # λ_t
+        "lambda_spatial_smoothness": 1e-0,   # λ_s
+        "noise_std": 0.00,                   # σ
     },
 
     # --- dr_randomization -------------------------------------------------
@@ -165,7 +165,7 @@ CONFIG = {
                         "inertia": {
                             "distribution": "uniform", # "uniform" or "gaussian"
                             "operation": "scaling", # "scaling" or "addition"
-                            "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
+                            "range": [0.90, 1.10], # gaussian: [mu, var], uniform: [low, high]
                         }
                     }
                 }
