@@ -347,7 +347,6 @@ class DRVecTask(VecTask):
         buf[:, 0:4] = self.dr_randomizations[buf_type]['noise_lambda_quat'](buf[:, 0:4])
         q_noise = quat_mul(buf[:, 0:4], quat_conjugate(q_clean))
         buf[:, 4:8] = quat_mul(q_noise, buf[:, 4:8])
-        buf[:, 4:8] = buf[:, 4:8] / (buf[:, 4:8].norm(dim=-1, keepdim=True) + 1e-8)
         buf[:, 8] = 2.0 * torch.acos(buf[:, 7].abs().clamp(max=1.0))
         buf[:, 9: ] = self.dr_randomizations[buf_type]['noise_lambda'](buf[:, 9: ])
         return buf
@@ -391,11 +390,10 @@ class DRVecTask(VecTask):
             q_noise = dr_params[param].get("quaternion_noise", 0.0)
             def noise_lambda_quat(q, q_noise=q_noise):
                 axis = torch.randn((q.shape[0], 3), device=q.device, dtype=q.dtype)
-                axis = axis / (axis.norm(dim=-1, keepdim=True) + 1e-8)
+                axis = axis / axis.norm(dim=-1, keepdim=True)
                 angle = torch.rand((q.shape[0], 1), device=q.device, dtype=q.dtype) * (q_noise * math.pi)
                 dq = torch.cat([axis * torch.sin(0.5 * angle), torch.cos(0.5 * angle)], dim=-1)
-                qn = quat_mul(dq, q)
-                return qn / (qn.norm(dim=-1, keepdim=True) + 1e-8)
+                return quat_mul(dq, q)
             
             if dist == 'gaussian':
                 mu, std = dr_params[param]["range"]
