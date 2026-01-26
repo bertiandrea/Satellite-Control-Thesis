@@ -83,7 +83,7 @@ def quat_conjugate(a: torch.Tensor) -> torch.Tensor:
 def quat_diff(q1: torch.Tensor, q2: torch.Tensor) -> torch.Tensor:
     q2_inv = quat_conjugate(q2)
     q = quat_mul(q1, q2_inv)
-    return q / (q.norm(p=2, dim=[-1], keepdim=True) + 1e-8)
+    return q / torch.norm(q, p=2, dim=-1, keepdim=True)
 
 @torch.jit.script
 def quat_diff_rad(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
