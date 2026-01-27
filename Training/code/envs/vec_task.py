@@ -345,9 +345,11 @@ class DRVecTask(VecTask):
     def apply_noise_on_custom_buffer(self, buf, buf_type):
         q_clean     = buf[:, 0:4].clone()                
         buf[:, 0:4] = self.dr_randomizations[buf_type]['noise_lambda_quat'](buf[:, 0:4])
+        buf[:, 0:4] = buf[:, 0:4] / buf[:, 0:4].norm(dim=-1, keepdim=True)
         q_noise = quat_mul(buf[:, 0:4], quat_conjugate(q_clean))
         buf[:, 4:8] = quat_mul(q_noise, buf[:, 4:8])
-        buf[:, 8] = 2.0 * torch.acos(buf[:, 7].abs().clamp(max=1.0))
+        buf[:, 4:8] = buf[:, 4:8] / buf[:, 4:8].norm(dim=-1, keepdim=True)
+        buf[:, 8] = 2.0 * torch.asin(q_noise[:, 0:3].norm(dim=-1).clamp(max=1.0))
         buf[:, 9: ] = self.dr_randomizations[buf_type]['noise_lambda'](buf[:, 9: ])
         return buf
 
