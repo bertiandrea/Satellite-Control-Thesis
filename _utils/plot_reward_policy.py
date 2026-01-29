@@ -45,7 +45,7 @@ def load_data(files):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", type=str, required=True)
-    ap.add_argument("--outdir", default="plots_reward_policy")
+    ap.add_argument("--outdir", default="_img/plots_reward_policy")
     args = ap.parse_args()
 
     base_path = Path(args.input)
@@ -117,6 +117,45 @@ def main():
         plt.tight_layout()
         plt.savefig(out / f"{t.replace('/', '_')}.png", dpi=150)
         plt.close()
+
+    base_runs = sorted([gid for gid in all_results.keys() if "_noise" not in gid], key=nat_key)
+    
+    sub_h = " |  NOMINAL  |   NOISE   |   DIFF%   "
+    name_w = 50
+    h_top = " " * name_w
+    h_mid = f"{'RUN ID':<{name_w}}"
+    
+    for t in TAGS:
+        h_top += f" | {t.split('/')[-1][:12]:^34}"
+        h_mid += sub_h
+
+    print(f"\n{h_top}\n{h_mid}\n{'-' * len(h_mid)}")
+
+    for base in base_runs:
+        row = f"{base:<{name_w}}"
+        p = base.split('/')
+        noise_id = f"{p[0]}_noise/{'/'.join(p[1:])}" if len(p) >= 2 else f"{base}_noise"
+
+        for t in TAGS:
+            d_nom = all_results.get(base, {}).get(t, {})
+            d_noi = all_results.get(noise_id, {}).get(t, {})
+            
+            v_nom = np.mean(d_nom["m"][-max(1, int(len(d_nom["m"])*0.05)):]) if "m" in d_nom else None
+            v_noi = np.mean(d_noi["m"][-max(1, int(len(d_noi["m"])*0.05)):]) if "m" in d_noi else None
+
+            f = lambda v: f"{v:9.2e}" if v is not None and abs(v) > 9999 else (f"{v:9.2f}" if v is not None else "      N/A")
+            
+            s_nom = f(v_nom)
+            s_noi = f(v_noi)
+            s_diff = "        -"
+            if v_nom and v_noi:
+                diff = (v_noi - v_nom) / abs(v_nom) * 100
+                s_diff = f"{diff:+8.1e}%" if abs(diff) > 999 else f"{diff:+8.1f}%"
+
+            row += f" | {s_nom} | {s_noi} | {s_diff} "
+        
+        print(row)
+    print("=" * len(h_mid))
 
 if __name__ == "__main__":
     main()

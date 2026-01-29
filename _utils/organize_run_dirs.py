@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # --- CONFIGURAZIONE ---
-EXPECTED_SEEDS = [420, 42000, 4200000]  # lista: può contenere duplicati
+EXPECTED_SEEDS = [420, 4200, 42000, 420000, 4200000, 420, 4200, 42000, 420000, 4200000]  # lista: può contenere duplicati
 EXPECTED_COUNTS = Counter(EXPECTED_SEEDS)
 EXPECTED_N = len(EXPECTED_SEEDS)
 
@@ -86,7 +86,7 @@ def main():
                     help="relative to root (default: %(default)s)")
     ap.add_argument("--dry-run", action="store_true",
                     help="only for move mode: print operations without moving")
-    ap.add_argument("--logs-delta-s", type=int, default=5,
+    ap.add_argument("--logs-delta-s", type=int, default=15,
                     help="delta seconds applied to logs timestamp matching (default: %(default)s)")
 
     args = ap.parse_args()

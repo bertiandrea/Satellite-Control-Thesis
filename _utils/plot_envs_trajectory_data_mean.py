@@ -42,9 +42,9 @@ def plot_component_across_files(out_dir, title, list_of_data, labels, non_negati
             plt.title(f"{title} – {label} ({scale})")
             plt.ylabel(f"{label} ({scale})")
             plt.grid(True, linestyle="--", alpha=0.4)
+            plt.legend(loc='upper right', fontsize='x-small', ncol=2)
 
         plt.xlabel("Step")
-        plt.legend()
         plt.tight_layout()
         plt.savefig(out_dir / f"{title.replace(' ', '_').lower()}_{scale}.png", dpi=300)
         plt.close()
