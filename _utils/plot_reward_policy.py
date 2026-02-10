@@ -15,13 +15,6 @@ TAGS = ["Reward_policy/phi_mean", "Reward_policy/energy_mean",
 LOG_DISPLAY = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
         "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
 
-THRESHOLDS = {
-    "Reward_policy/phi_mean": 1,
-    "Reward_policy/energy_mean": 100,
-    "Reward_policy/du_energy_mean": 1,
-    "Reward_policy/max_torque_mean": 1,
-}
-
 def load_data(files):
     step_data = defaultdict(lambda: defaultdict(list))
     for f in files:
@@ -36,7 +29,7 @@ def load_data(files):
     result = {}
     for t in step_data:
         steps = sorted(step_data[t].keys())
-        m = [np.mean(step_data[t][s]) for s in steps]
+        m = [np.median(step_data[t][s]) for s in steps]
         mi = [np.min(step_data[t][s]) for s in steps]
         ma = [np.max(step_data[t][s]) for s in steps]
         result[t] = {"x": np.array(steps), "m": np.array(m), "min": np.array(mi), "max": np.array(ma)}
@@ -68,14 +61,9 @@ def main():
         
         # --- PATCH LOG SCALE ---
         if t in LOG_DISPLAY:
-            plt.yscale('log')
+            plt.yscale("symlog", linthresh=1e0)
         # -----------------------
 
-        thr = THRESHOLDS.get(t, None)
-        if thr is not None:
-            plt.axhline(thr, linestyle="--", linewidth=1.2, color="red", label="_nolegend_")
-
-        legend_below_flags = []
         for i, gid in enumerate(sorted(all_results.keys(), key=nat_key)):
             if t not in all_results[gid]: continue
 
@@ -92,26 +80,9 @@ def main():
             line, = plt.plot(d["x"], d["m"], label=f"{gid} ({last_val:.2f})", color=color, linewidth=1.5)
             #plt.fill_between(d["x"], d["min"], d["max"], color=line.get_color(), alpha=0.2)
 
-            below = (thr is not None) and (last_val < thr)
-            legend_below_flags.append(below)
-
         plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""))
         plt.grid(True, which="both", alpha=0.3)
-        leg = plt.legend(fontsize='x-small', ncol=2)
-        if leg is not None:
-            texts = leg.get_texts()
-            for txt, below in zip(texts, legend_below_flags):
-                if below:
-                    txt.set_color("black")
-                    txt.set_bbox(dict(
-                        facecolor="yellow",
-                        edgecolor="none",
-                        alpha=0.6,
-                        boxstyle="round,pad=0.2"
-                    ))
-                else:
-                    txt.set_bbox(None)
-
+        plt.legend(fontsize='x-small', ncol=2)
         plt.xlabel("Steps")
         plt.ylabel("Value")
         plt.tight_layout()
@@ -121,7 +92,7 @@ def main():
     base_runs = sorted([gid for gid in all_results.keys() if "_noise" not in gid], key=nat_key)
     
     sub_h = " |  NOMINAL  |   NOISE   |   DIFF%   "
-    name_w = 50
+    name_w = 60
     h_top = " " * name_w
     h_mid = f"{'RUN ID':<{name_w}}"
     
