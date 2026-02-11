@@ -78,36 +78,5 @@ CONFIG = {
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
         "enabled": DR_RANDOMIZATION,
-        "dr_params": {
-            "observations": {
-                "distribution": "uniform", # "uniform" or "gaussian"
-                "operation": "scaling", # "scaling" or "addition"
-                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
-                "quaternion_noise": 0.01,
-            },
-            "states": {
-                "distribution": "uniform", # "uniform" or "gaussian"
-                "operation": "scaling", # "scaling" or "addition"
-                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
-                "quaternion_noise": 0.01,
-            },
-            "actions": {
-                "distribution": "uniform", # "uniform" or "gaussian"
-                "operation": "scaling", # "scaling" or "addition"
-                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
-            },
-            "actor_params": {
-                "satellite": {
-                    "color": True,
-                    "rigid_body_properties": {
-                        "inertia": {
-                            "distribution": "uniform", # "uniform" or "gaussian"
-                            "operation": "scaling", # "scaling" or "addition"
-                            "range": [0.90, 1.10], # gaussian: [mu, var], uniform: [low, high]
-                        }
-                    }
-                }
-            }
-        }
     }
 }
