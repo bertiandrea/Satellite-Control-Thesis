@@ -12,9 +12,9 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 SEED = 420
 NUM_ENVS = 4096
 EPISODE_LENGTH = 360.0
-HEADLESS = False
-DEBUG_ARROWS = True
-LOG_TRAJECTORIES = True
+HEADLESS = True
+DEBUG_ARROWS = False
+LOG_TRAJECTORIES = False
 
 DR_RANDOMIZATION = False
 EXPLOSION = False
