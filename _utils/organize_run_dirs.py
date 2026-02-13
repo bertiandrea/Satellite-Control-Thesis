@@ -88,24 +88,29 @@ def main():
                     help="only for move mode: print operations without moving")
     ap.add_argument("--logs-delta-s", type=int, default=15,
                     help="delta seconds applied to logs timestamp matching (default: %(default)s)")
+    ap.add_argument("--no-log", action="store_true",
+                    help="exclude log files from checks and moves (only for move mode)")
 
     args = ap.parse_args()
 
     root = Path(args.root).expanduser().resolve()
     cfg_root = (root / args.config_dir).resolve()
     runs_root = (root / args.runs_dir).resolve()
-    logs_root = (root / args.logs_dir).resolve()
+    if not args.no_log:
+        logs_root = (root / args.logs_dir).resolve()
 
     if not cfg_root.is_dir():
         raise SystemExit(f"config dir not found: {cfg_root}")
     if not runs_root.is_dir():
         raise SystemExit(f"runs dir not found: {runs_root}")
-    if not logs_root.is_dir():
-        raise SystemExit(f"logs dir not found: {logs_root}")
+    if not args.no_log:
+        if not logs_root.is_dir():
+            raise SystemExit(f"logs dir not found: {logs_root}")
 
     configs = [p for p in cfg_root.rglob("*.json") if p.is_file() and CFG_RE.search(p.name)]
     run_dirs = [d for d in runs_root.rglob("*") if d.is_dir() and RUN_RE.search(d.name)]
-    logs = [p for p in logs_root.rglob("*.pt") if p.is_file() and LOGS_RE.search(p.name)]
+    if not args.no_log:
+        logs = [p for p in logs_root.rglob("*.pt") if p.is_file() and LOGS_RE.search(p.name)]
 
     errors = []
     seeds_by_key = {}
@@ -113,7 +118,8 @@ def main():
 
     cfg_by_ts = {get_ts_cfg(p.name): p for p in configs}
     runs_by_ts = {get_ts_run(d.name): d for d in run_dirs}
-    logs_by_ts = {get_ts_logs(p.name): p for p in logs}
+    if not args.no_log:
+        logs_by_ts = {get_ts_logs(p.name): p for p in logs}
 
     for ts, config in sorted(cfg_by_ts.items()):
         m = CFG_RE.search(config.name)
@@ -139,26 +145,29 @@ def main():
             errors.append(f"Agente {agent_id} ({prefix}): Nessuna cartella RUN trovata per {config.name} (atteso {ts})")
             continue
 
-        log_file = None
-        for off in range(0, args.logs_delta_s + 1):
-            log_file = logs_by_ts.get(ts + timedelta(seconds=off))
-            if log_file is not None:
-                break
-        
-        if log_file is None:
-            errors.append(f"Agente {agent_id} ({prefix}): Nessun file LOG trovato per {config.name}")
-            continue
+        if not args.no_log:
+            log_file = None
+            for off in range(0, args.logs_delta_s + 1):
+                log_file = logs_by_ts.get(ts + timedelta(seconds=off))
+                if log_file is not None:
+                    break
+            
+            if log_file is None:
+                errors.append(f"Agente {agent_id} ({prefix}): Nessun file LOG trovato per {config.name}")
+                continue
 
         if args.mode == "move":
             agent_dir = f"agent_{agent_id}"
 
             cfg_base = config.parent.parent if config.parent.name.startswith("agent_") else config.parent
             run_base = run_dir.parent.parent if run_dir.parent.name.startswith("agent_") else run_dir.parent
-            log_base = log_file.parent.parent if log_file.parent.name.startswith("agent_") else log_file.parent
+            if not args.no_log:
+                log_base = log_file.parent.parent if log_file.parent.name.startswith("agent_") else log_file.parent
 
             planned_moves.append((config, cfg_base / agent_dir / config.name))
             planned_moves.append((run_dir, run_base / agent_dir / run_dir.name))
-            planned_moves.append((log_file, log_base / agent_dir / log_file.name))
+            if not args.no_log:
+                planned_moves.append((log_file, log_base / agent_dir / log_file.name))
 
     # --- SEEDS check ---
     for (prefix, agent_id), seeds in seeds_by_key.items():
