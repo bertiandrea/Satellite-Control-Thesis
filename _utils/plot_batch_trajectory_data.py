@@ -14,8 +14,12 @@ def plot_component_across_files(out_dir, title, list_of_data, labels, non_negati
 
     list_of_data.sort(key=lambda x: nat_key(x[0]))
     
-    unique_groups = sorted([x[0] for x in list_of_data], key=nat_key)
-    color_map = {name: plt.cm.tab10(i % 10) for i, name in enumerate(unique_groups)}
+    unique_groups = sorted(
+        set(((gid.split('/')[0][:-6] if gid.split('/')[0].endswith("_noise") else gid.split('/')[0])
+             for gid, _, _ in list_of_data)),
+        key=nat_key
+    )
+    cmap = plt.get_cmap("gist_rainbow", len(unique_groups))
 
     for scale in (["linear", "log"] if log_scale else ["linear"]):
         plt.figure(figsize=(20, 8 * C))
@@ -24,7 +28,7 @@ def plot_component_across_files(out_dir, title, list_of_data, labels, non_negati
             plt.subplot(C, 1, i + 1)
 
             for run_name, steps, data in list_of_data:
-                mean = data[:, :, i].median(dim=1).values.numpy()
+                mean = data[:, :, i].mean(dim=1).numpy()
                 std = data[:, :, i].std(dim=1).numpy()
                 step_np = steps.numpy()
 
@@ -32,7 +36,15 @@ def plot_component_across_files(out_dir, title, list_of_data, labels, non_negati
                 if non_negative:
                     lower = np.maximum(lower, 0.0)
 
-                color = color_map[run_name]
+                run_name  = run_name.split('/')[0]
+                group_name = (run_name[:-6] if run_name.endswith("_noise") else run_name)
+                print(f"Plotting {run_name} in group {group_name}")
+
+                group_idx = unique_groups.index(group_name)
+                base_color = cmap(group_idx)
+                alpha_val = 1.0 if not run_name.endswith("_noise") else 0.5
+                color = (base_color[0], base_color[1], base_color[2], alpha_val)
+                
                 last_val = np.mean(mean[-max(1, int(len(mean) * 0.05)):]) if len(mean) > 0 else 0.0
                 plt.plot(step_np, mean, label=f"{run_name} ({last_val:.2f})", color=color, linewidth=1.5)
                 plt.fill_between(step_np, lower, upper, color=color, alpha=0.15)
@@ -61,7 +73,7 @@ def main():
 
     grouped = defaultdict(list)
     for p in paths:
-        gid = f"{p.parts[-4]}/{p.parts[-3]}"
+        gid = "/".join(p.relative_to(base_path).parts[:2])
         grouped[gid].append(p)
 
     out = Path(args.outdir)

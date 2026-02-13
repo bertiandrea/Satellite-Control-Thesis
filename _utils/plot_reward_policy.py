@@ -31,7 +31,7 @@ def load_data(files):
     result = {}
     for t in step_data:
         steps = sorted(step_data[t].keys())
-        m = [np.median(step_data[t][s]) for s in steps]
+        m = [np.mean(step_data[t][s]) for s in steps]
         mi = [np.min(step_data[t][s]) for s in steps]
         ma = [np.max(step_data[t][s]) for s in steps]
         result[t] = {"x": np.array(steps), "m": np.array(m), "min": np.array(mi), "max": np.array(ma)}
@@ -40,15 +40,16 @@ def load_data(files):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", type=str, required=True)
+    ap.add_argument("--training", action="store_true")
     ap.add_argument("--outdir", default="_img/plots_reward_policy")
     args = ap.parse_args()
 
     base_path = Path(args.input)
-    paths = list(base_path.glob("*/*/*tfevents*"))
+    paths = list(base_path.rglob("*tfevents*"))
     
     grouped = defaultdict(list)
     for p in paths:
-        gid = f"{p.parts[-4]}/{p.parts[-3]}"
+        gid = "/".join(p.relative_to(base_path).parts[:2])
         grouped[gid].append(p)
 
     out = Path(args.outdir)
@@ -56,8 +57,18 @@ def main():
     
     all_results = {gid: load_data(files) for gid, files in grouped.items()}
 
-    unique_groups = sorted(list(set(gid.split('/')[0] for gid in all_results.keys())), key=nat_key)
+    gids_sorted = sorted(all_results.keys(), key=nat_key)
+    unique_groups = sorted(
+        set((n[:-6] if n.endswith("_noise") else n) for n in (gid.split('/')[0] for gid in all_results.keys())),
+        key=nat_key
+    )
 
+    if args.training:
+        cmap = plt.get_cmap("gist_rainbow", len(gids_sorted))
+    else:
+        cmap = plt.get_cmap("gist_rainbow", len(unique_groups))
+
+    print (f"Found groups: {unique_groups}")
     for t in TAGS:
         plt.figure(figsize=(20, 8))
         
@@ -69,28 +80,30 @@ def main():
         for i, gid in enumerate(sorted(all_results.keys(), key=nat_key)):
             if t not in all_results[gid]: continue
 
-            #group_name = gid.split('/')[0]
-            #group_idx = unique_groups.index(group_name)
-            #base_color = plt.cm.tab10(group_idx % 10) 
-            #runs_in_group = [g for g in sorted(all_results.keys(), key=nat_key) if g.startswith(group_name)]
-            #run_idx = runs_in_group.index(gid)
-            #alpha_val = max(0.3, 1.0 - (run_idx * 0.12))
-            #color = (base_color[0], base_color[1], base_color[2], alpha_val)
+            run_name = gid.split('/')[0]
 
-            # --- MINIMAL COLOR SIMPLIFICATION: one distinct color per gid ---
-            gids_sorted = sorted(all_results.keys(), key=nat_key)
-            cmap = plt.cm.get_cmap("tab20", len(gids_sorted))  # discrete palette
-            color = cmap(gids_sorted.index(gid))
-            # ---------------------------------------------------------------
-            
+            if args.training:
+                # TRAINING: niente gestione _noise, colore unico per gid
+                color = cmap(i)
+            else:
+                # EVAL: raggruppa nominal/noise sullo stesso colore base
+
+                group_name = (run_name[:-6] if run_name.endswith("_noise") else run_name)
+                print(f"Plotting {run_name} in group {group_name} for tag {t}...")
+
+                group_idx = unique_groups.index(group_name)
+                base_color = cmap(group_idx)
+                alpha_val = 1.0 if not run_name.endswith("_noise") else 0.5
+                color = (base_color[0], base_color[1], base_color[2], alpha_val)
+
             d = all_results[gid][t]
             last_val = np.mean(d["m"][-max(1, int(len(d["m"]) * 0.05)):]) if len(d["m"]) > 0 else 0.0
-            line, = plt.plot(d["x"], d["m"], label=f"{gid} ({last_val:.2f})", color=color, linewidth=1.5)
+            line, = plt.plot(d["x"], d["m"], label=f"{run_name} ({last_val:.2f})", color=color, linewidth=1.5)
             #plt.fill_between(d["x"], d["min"], d["max"], color=line.get_color(), alpha=0.2)
 
         plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""), fontsize='xx-large')
         plt.grid(True, linestyle="--", alpha=0.4)
-        plt.legend(fontsize='xx-large', ncol=2, loc='upper center')
+        plt.legend(fontsize='large', ncol=2, loc='upper right')
         plt.xlabel("Steps")
         plt.ylabel("Value")
         plt.tight_layout()
@@ -100,7 +113,7 @@ def main():
     base_runs = sorted([gid for gid in all_results.keys() if "_noise" not in gid], key=nat_key)
     
     sub_h = " |  NOMINAL  |   NOISE   |   DIFF%   "
-    name_w = 60
+    name_w = 80
     h_top = " " * name_w
     h_mid = f"{'RUN ID':<{name_w}}"
     

@@ -24,8 +24,12 @@ def plot_component_across_files(out_dir, title, list_of_data, labels):
     C = list_of_data[0][2]["mean"].shape[1] 
     list_of_data.sort(key=lambda x: nat_key(x[0]))
 
-    unique_groups = sorted([x[0] for x in list_of_data], key=nat_key)
-    color_map = {name: plt.cm.tab10(i % 10) for i, name in enumerate(unique_groups)}
+    unique_groups = sorted(
+        set(((gid.split('/')[0][:-6] if gid.split('/')[0].endswith("_noise") else gid.split('/')[0])
+             for gid, _, _ in list_of_data)),
+        key=nat_key
+    )
+    cmap = plt.get_cmap("gist_rainbow", len(unique_groups))
 
     for i, label in enumerate(labels):
         if i >= C: break
@@ -38,7 +42,15 @@ def plot_component_across_files(out_dir, title, list_of_data, labels):
             c_mean = data["com_mean"][i].item()
             # c_std  = data["com_std"][i].item()
 
-            color = color_map[run_name]
+            run_name  = run_name.split('/')[0]
+            group_name = (run_name[:-6] if run_name.endswith("_noise") else run_name)
+            print(f"Plotting {run_name} in group {group_name}")
+
+            group_idx = unique_groups.index(group_name)
+            base_color = cmap(group_idx)
+            alpha_val = 1.0 if not run_name.endswith("_noise") else 0.5
+            color = (base_color[0], base_color[1], base_color[2], alpha_val)
+            
             plt.plot(fr, mean, color=color, label=f"{run_name} (CoM: {c_mean:.1f}Hz)", lw=1.5)
             plt.fill_between(fr, np.maximum(mean - std, 0), mean + std, color=color, alpha=0.1)
             plt.axvline(c_mean, color=color, linestyle="--", alpha=1.0, lw=1.0)
@@ -68,7 +80,7 @@ def main():
 
     grouped = defaultdict(list)
     for p in paths:
-        gid = f"{p.parts[-4]}/{p.parts[-3]}"
+        gid = "/".join(p.relative_to(base_path).parts[:2])
         grouped[gid].append(p)
 
     out = Path(args.outdir)
