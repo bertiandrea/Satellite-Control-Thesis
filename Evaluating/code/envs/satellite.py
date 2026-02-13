@@ -84,15 +84,17 @@ class Satellite(DRVecTask):
 
         self.impulse = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
-        # ---------------- Trajectory logging setup ----------------
-        os.makedirs("logs", exist_ok=True)
         self.control_steps = 0
-        import datetime
-        date_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.log_path = f"logs/trajectories_{date_time}.pt"
-        self.log_buffer = []
-        self.log_every = 100     # ogni quanti step salvare in RAM
-        self.flush_every = 1000  # ogni quanti step scrivere su disco
+
+        # ---------------- Trajectory logging setup ----------------
+        if self.log_trajectories:
+            os.makedirs("logs", exist_ok=True)
+            import datetime
+            date_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.log_path = f"logs/trajectories_{date_time}.pt"
+            self.log_buffer = []
+            self.log_every = 100     # ogni quanti step salvare in RAM
+            self.flush_every = 1000  # ogni quanti step scrivere su disco
         # -----------------------------------------------------------
 
     def create_sim(self) -> None:
@@ -337,28 +339,29 @@ class Satellite(DRVecTask):
             self.draw_arrows()
 
         # ---------------- Efficient buffered trajectory logging ----------------
-        if self.control_steps % self.log_every == 0:
-            self.log_buffer.append({
-                "step": int(self.control_steps),
-                "quat": self.satellite_quats.detach().cpu(),
-                "ang_diff": quat_diff_rad(self.satellite_quats, self.goal_quat).detach().cpu() * (180.0 / math.pi),
-                "angvel": self.satellite_angvels.detach().cpu(),
-                "angacc": self.satellite_angacc.detach().cpu(),
-                "actions": self.actions.detach().cpu(),
-            })
+        if self.log_trajectories:
+            if self.control_steps % self.log_every == 0:
+                self.log_buffer.append({
+                    "step": int(self.control_steps),
+                    "quat": self.satellite_quats.detach().cpu(),
+                    "ang_diff": quat_diff_rad(self.satellite_quats, self.goal_quat).detach().cpu() * (180.0 / math.pi),
+                    "angvel": self.satellite_angvels.detach().cpu(),
+                    "angacc": self.satellite_angacc.detach().cpu(),
+                    "actions": self.actions.detach().cpu(),
+                })
 
-        if self.control_steps % self.flush_every == 0 and self.log_buffer:
-            tmp_path = f"{self.log_path}.tmp"
-            if os.path.exists(self.log_path):
-                data = torch.load(self.log_path, weights_only=True)
-                data.extend(self.log_buffer)
-            else:
-                data = list(self.log_buffer)
-            torch.save(data, tmp_path)
-            os.replace(tmp_path, self.log_path)
-            self.log_buffer.clear()
-            if self.debug_prints:
-                print(f"[LOG] Flushed to {self.log_path} at step {self.control_steps}")
-        self.control_steps += 1
+            if self.control_steps % self.flush_every == 0 and self.log_buffer:
+                tmp_path = f"{self.log_path}.tmp"
+                if os.path.exists(self.log_path):
+                    data = torch.load(self.log_path, weights_only=True)
+                    data.extend(self.log_buffer)
+                else:
+                    data = list(self.log_buffer)
+                torch.save(data, tmp_path)
+                os.replace(tmp_path, self.log_path)
+                self.log_buffer.clear()
+                if self.debug_prints:
+                    print(f"[LOG] Flushed to {self.log_path} at step {self.control_steps}")
         # -----------------------------------------------------------------------
+        self.control_steps += 1
 

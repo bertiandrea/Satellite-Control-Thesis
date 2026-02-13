@@ -15,6 +15,8 @@ TAGS = ["Reward_policy/phi_mean", "Reward_policy/energy_mean",
 LOG_DISPLAY = ["Reward_policy/phi_mean", "Reward_policy/energy_mean", 
         "Reward_policy/du_energy_mean", "Reward_policy/max_torque_mean"]
 
+LOG_VAL = [1e1, 1e3, 1e2, 1e2]
+
 def load_data(files):
     step_data = defaultdict(lambda: defaultdict(list))
     for f in files:
@@ -42,7 +44,7 @@ def main():
     args = ap.parse_args()
 
     base_path = Path(args.input)
-    paths = list(base_path.glob("*/*/*/*tfevents*"))
+    paths = list(base_path.glob("*/*/*tfevents*"))
     
     grouped = defaultdict(list)
     for p in paths:
@@ -57,32 +59,38 @@ def main():
     unique_groups = sorted(list(set(gid.split('/')[0] for gid in all_results.keys())), key=nat_key)
 
     for t in TAGS:
-        plt.figure(figsize=(12, 7))
+        plt.figure(figsize=(20, 8))
         
         # --- PATCH LOG SCALE ---
         if t in LOG_DISPLAY:
-            plt.yscale("symlog", linthresh=1e0)
+            plt.yscale("symlog", linthresh=LOG_VAL[TAGS.index(t)])
         # -----------------------
 
         for i, gid in enumerate(sorted(all_results.keys(), key=nat_key)):
             if t not in all_results[gid]: continue
 
-            group_name = gid.split('/')[0]
-            group_idx = unique_groups.index(group_name)
-            base_color = plt.cm.tab10(group_idx % 10) 
-            runs_in_group = [g for g in sorted(all_results.keys(), key=nat_key) if g.startswith(group_name)]
-            run_idx = runs_in_group.index(gid)
-            alpha_val = max(0.3, 1.0 - (run_idx * 0.12))
-            color = (base_color[0], base_color[1], base_color[2], alpha_val)
+            #group_name = gid.split('/')[0]
+            #group_idx = unique_groups.index(group_name)
+            #base_color = plt.cm.tab10(group_idx % 10) 
+            #runs_in_group = [g for g in sorted(all_results.keys(), key=nat_key) if g.startswith(group_name)]
+            #run_idx = runs_in_group.index(gid)
+            #alpha_val = max(0.3, 1.0 - (run_idx * 0.12))
+            #color = (base_color[0], base_color[1], base_color[2], alpha_val)
+
+            # --- MINIMAL COLOR SIMPLIFICATION: one distinct color per gid ---
+            gids_sorted = sorted(all_results.keys(), key=nat_key)
+            cmap = plt.cm.get_cmap("tab20", len(gids_sorted))  # discrete palette
+            color = cmap(gids_sorted.index(gid))
+            # ---------------------------------------------------------------
             
             d = all_results[gid][t]
             last_val = np.mean(d["m"][-max(1, int(len(d["m"]) * 0.05)):]) if len(d["m"]) > 0 else 0.0
             line, = plt.plot(d["x"], d["m"], label=f"{gid} ({last_val:.2f})", color=color, linewidth=1.5)
             #plt.fill_between(d["x"], d["min"], d["max"], color=line.get_color(), alpha=0.2)
 
-        plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""))
-        plt.grid(True, which="both", alpha=0.3)
-        plt.legend(fontsize='x-small', ncol=2)
+        plt.title(t.replace('_', ' ').title() + (" (Log Scale)" if t in LOG_DISPLAY else ""), fontsize='xx-large')
+        plt.grid(True, linestyle="--", alpha=0.4)
+        plt.legend(fontsize='xx-large', ncol=2, loc='upper center')
         plt.xlabel("Steps")
         plt.ylabel("Value")
         plt.tight_layout()
