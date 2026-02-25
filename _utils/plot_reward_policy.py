@@ -110,7 +110,7 @@ def main():
         plt.savefig(out / f"{t.replace('/', '_')}.png", dpi=150)
         plt.close()
 
-    base_runs = sorted([gid for gid in all_results.keys() if "_noise" not in gid], key=nat_key)
+    base_runs = sorted((all_results.keys() if args.training else [gid for gid in all_results.keys() if "_noise" not in gid]), key=nat_key)
     
     sub_h = " |  NOMINAL  |   NOISE   |   DIFF%   "
     name_w = 80
@@ -126,7 +126,7 @@ def main():
     for base in base_runs:
         row = f"{base:<{name_w}}"
         p = base.split('/')
-        noise_id = f"{p[0]}_noise/{'/'.join(p[1:])}" if len(p) >= 2 else f"{base}_noise"
+        noise_id = base if args.training else (f"{p[0]}_noise/{'/'.join(p[1:])}" if len(p) >= 2 else f"{base}_noise")
 
         for t in TAGS:
             d_nom = all_results.get(base, {}).get(t, {})
