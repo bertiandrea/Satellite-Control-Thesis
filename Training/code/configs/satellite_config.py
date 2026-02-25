@@ -9,9 +9,9 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-HEADLESS = False
+HEADLESS = True
 PROFILE = False
-DEBUG_ARROWS = True
+DEBUG_ARROWS = False
 DEBUG_PRINTS = False
 
 EPISODE_LENGTH = 180.0
@@ -144,19 +144,19 @@ CONFIG = {
             "observations": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
-                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
-                "quaternion_noise": 0.01,
+                "range": [0.9999, 1.0001], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.0001,
             },
             "states": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
-                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
-                "quaternion_noise": 0.01,
+                "range": [0.9999, 1.0001], # gaussian: [mu, var], uniform: [low, high]
+                "quaternion_noise": 0.0001,
             },
             "actions": {
                 "distribution": "uniform", # "uniform" or "gaussian"
                 "operation": "scaling", # "scaling" or "addition"
-                "range": [0.99, 1.01], # gaussian: [mu, var], uniform: [low, high]
+                "range": [0.9999, 1.0001], # gaussian: [mu, var], uniform: [low, high]
             },
             "actor_params": {
                 "satellite": {

@@ -6,7 +6,7 @@
     "rl_device": "cuda:0",
     "sim_device": "cuda:0",
     "graphics_device_id": 0,
-    "headless": false,
+    "headless": true,
     "env": {
         "numEnvs": 4096,
         "numObservations": 15,
@@ -17,7 +17,7 @@
         "max_episode_length": 180.0,
         "envSpacing": 3.0,
         "torque_scale": 100.0,
-        "debug_arrows": true,
+        "debug_arrows": false,
         "debug_prints": false,
         "asset": {
             "assetRoot": "/home/andreaberti/Satellite-Control-Thesis/Training/code",

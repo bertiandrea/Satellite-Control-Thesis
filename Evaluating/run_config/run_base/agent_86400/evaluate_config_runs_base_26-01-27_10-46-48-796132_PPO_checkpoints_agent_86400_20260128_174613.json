@@ -1,12 +1,12 @@
 {
     "set_seed": true,
-    "seed": 4200,
+    "seed": 420,
     "profile": false,
     "physics_engine": "physx",
     "rl_device": "cuda:0",
     "sim_device": "cuda:0",
     "graphics_device_id": 0,
-    "headless": false,
+    "headless": true,
     "env": {
         "numEnvs": 4096,
         "numObservations": 15,
@@ -17,7 +17,7 @@
         "max_episode_length": 360.0,
         "envSpacing": 3.0,
         "torque_scale": 100.0,
-        "debug_arrows": true,
+        "debug_arrows": false,
         "debug_prints": false,
         "asset": {
             "assetRoot": "/home/andreaberti/Satellite-Control-Thesis/Evaluating/code",
@@ -76,7 +76,7 @@
         "trainer": {
             "timesteps": 21600,
             "disable_progressbar": false,
-            "headless": false,
+            "headless": true,
             "stochastic_evaluation": false
         },
         "memory": {
@@ -106,26 +106,26 @@
                 "distribution": "uniform",
                 "operation": "scaling",
                 "range": [
-                    0.99,
-                    1.01
+                    0.9999,
+                    1.0001
                 ],
-                "quaternion_noise": 0.01
+                "quaternion_noise": 0.0001
             },
             "states": {
                 "distribution": "uniform",
                 "operation": "scaling",
                 "range": [
-                    0.99,
-                    1.01
+                    0.9999,
+                    1.0001
                 ],
-                "quaternion_noise": 0.01
+                "quaternion_noise": 0.0001
             },
             "actions": {
                 "distribution": "uniform",
                 "operation": "scaling",
                 "range": [
-                    0.99,
-                    1.01
+                    0.9999,
+                    1.0001
                 ]
             },
             "actor_params": {
