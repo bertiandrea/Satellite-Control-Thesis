@@ -1,21 +1,38 @@
-                                                                                 |              phi_mean              |            energy_mean             |            du_energy_me            |            max_torque_m           
-RUN ID                                                                           |  NOMINAL  |   NOISE   |   DIFF%    |  NOMINAL  |   NOISE   |   DIFF%    |  NOMINAL  |   NOISE   |   DIFF%    |  NOMINAL  |   NOISE   |   DIFF%   
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-runs_base/Jan27_10-46-47_mushu_satellite_reward                                  |      4.85 |      4.85 |     +0.0%  |    790.66 |    790.66 |     +0.0%  |    249.48 |    249.48 |     +0.0%  |      5.86 |      5.86 |     +0.0% 
-runs_CAPS/Feb23_20-35-29_mushu_satellite_reward                                  |     15.11 |     15.11 |     +0.0%  |   1580.04 |   1580.04 |     +0.0%  |     45.44 |     45.44 |     +0.0%  |     10.41 |     10.41 |     +0.0% 
-runs_CAPS_randomization/Feb25_11-29-45_mushu_satellite_reward                    |      9.26 |      9.26 |     +0.0%  |   1156.22 |   1156.22 |     +0.0%  |    395.64 |    395.64 |     +0.0%  |      8.81 |      8.81 |     +0.0% 
-runs_randomization_inertia/Feb10_17-56-18_mushu_satellite_reward                 |      6.76 |      6.76 |     +0.0%  |   1078.01 |   1078.01 |     +0.0%  |    641.26 |    641.26 |     +0.0%  |      7.80 |      7.80 |     +0.0% 
-runs_randomization_noise/Feb17_14-20-03_mushu_satellite_reward                   |     10.03 |     10.03 |     +0.0%  |   3444.34 |   3444.34 |     +0.0%  |    415.39 |    415.39 |     +0.0%  |     26.94 |     26.94 |     +0.0% 
-runs_randomization_noise_inertia/Feb17_11-48-00_mushu_satellite_reward           |      6.76 |      6.76 |     +0.0%  |   3034.68 |   3034.68 |     +0.0%  |   8423.82 |   8423.82 |     +0.0%  |     31.72 |     31.72 |     +0.0% 
+                                                                                 | phi_mean     | energy_mean  | du_energy_me | max_torque_m           
+RUN ID                                                                           |    NOMINAL   |    NOMINAL   |    NOMINAL   |    NOMINAL  
+----------------------------------------------------------------------------------------------------------------------------------------------
+runs_base/Jan27_10-46-47_mushu_satellite_reward                                  |         4.85 |       790.66 |       249.48 |         5.86 
+runs_randomization_inertia/Feb10_17-56-18_mushu_satellite_reward                 |         6.76 |      1078.01 |       641.26 |         7.80 
+runs_randomization_noise/Feb17_14-20-03_mushu_satellite_reward                   |        10.03 |      3444.34 |       415.39 |        26.94 
+runs_randomization_noise_inertia/Feb17_11-48-00_mushu_satellite_reward           |         6.76 |      3034.68 |      8423.82 |        31.72 
+runs_CAPS/Feb23_20-35-29_mushu_satellite_reward                                  |        15.11 |      1580.04 |        45.44 |        10.41 
+runs_CAPS_randomization/Feb25_11-29-45_mushu_satellite_reward                    |         9.26 |      1156.22 |       395.64 |         8.81 
 ====================================================================================================================================================================================================================================
                                                                                  |              phi_mean              |            energy_mean             |            du_energy_me            |            max_torque_m           
 RUN ID                                                                           |  NOMINAL  |   NOISE   |   DIFF%    |  NOMINAL  |   NOISE   |   DIFF%    |  NOMINAL  |   NOISE   |   DIFF%    |  NOMINAL  |   NOISE   |   DIFF%   
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 runs_base/agent_86400                                                            |      1.72 |      2.25 |    +30.6%  |      0.01 |     85.68 | +1.2e+06%  |      0.00 |      0.32 | +1.1e+10%  |      0.07 |      0.60 |   +752.6% 
+runs_randomization_NX_I10/agent_86400                                            |      8.47 |     10.33 |    +21.9%  |    695.03 |   1261.42 |    +81.5%  |     20.91 |     76.52 |   +265.9%  |      3.41 |      7.15 |   +109.6% 
+runs_randomization_NX_I10 Baseline Comparison                                    |   +392.4% |   +359.1% |            | +6.9e+06% |  +1372.2% |            |        +∞ | +2.4e+04% |            |  +4771.4% |  +1091.7% |
+runs_randomization_N001_IX/agent_86400                                           |     17.33 |      9.37 |    -45.9%  |   3984.14 |   5618.85 |    +41.0%  |    146.31 |    399.52 |   +173.1%  |     27.83 |     43.80 |    +57.3% 
+runs_randomization_N001_IX Baseline Comparison                                   |   +907.6% |   +316.4% |            | +4.0e+07% |  +6457.9% |            |        +∞ | +1.2e+05% |            | +4.0e+04% |  +7200.0% |
+runs_randomization_N001_I10/agent_86400                                          |     19.89 |      0.93 |    -95.3%  |   2190.25 |   1360.93 |    -37.9%  |    798.21 |   4795.95 |   +500.8%  |     15.61 |     23.80 |    +52.5% 
+runs_randomization_N001_I10 Baseline Comparison                                  |  +1056.4% |    -58.7% |            | +2.2e+07% |  +1488.4% |            |        +∞ | +1.5e+06% |            | +2.2e+04% |  +3866.7% |
 runs_CAPS/agent_86400                                                            |      6.45 |     14.70 |   +128.1%  |     26.34 |   1224.16 | +4.5e+03%  |      0.03 |    134.76 | +4.8e+05%  |      0.17 |     12.24 | +7.0e+03% 
 runs_CAPS_randomization/agent_86400                                              |     21.54 |      8.41 |    -61.0%  |   1464.61 |    869.46 |    -40.6%  |      7.57 |     98.35 | +1.2e+03%  |      9.69 |      6.16 |    -36.5% 
-runs_randomization_N001_I10/agent_86400                                          |     19.89 |      0.93 |    -95.3%  |   2190.25 |   1360.93 |    -37.9%  |    798.21 |   4795.95 |   +500.8%  |     15.61 |     23.80 |    +52.5% 
-runs_randomization_N001_IX/agent_86400                                           |     17.33 |      9.37 |    -45.9%  |   3984.14 |   5618.85 |    +41.0%  |    146.31 |    399.52 |   +173.1%  |     27.83 |     43.80 |    +57.3% 
-runs_randomization_NX_I10/agent_86400                                            |      8.47 |     10.33 |    +21.9%  |    695.03 |   1261.42 |    +81.5%  |     20.91 |     76.52 |   +265.9%  |      3.41 |      7.15 |   +109.6% 
 ====================================================================================================================================================================================================================================
 
+1) Baseline
+- ϕ_mean worsens moderately (+30.6%).
+- energy_mean, Δu_energy_mean, and max_torque_mean increase by huge percentages.
+Interpretation: the baseline is not robust to noise.
+Also, the gigantic DIFF% values are partly a numerical artifact: nominal energy/Δu are near zero, so any nonzero noisy value gives an extreme percentage. Still, the absolute jump shows a real robustness failure.
+- Nominal specialization / lack of robustness
+- Noise triggers control chattering / large corrective actions
+2) CAPS
+- Tradeoff: Worst performances than baseline
+- Improves in terms of actions smoothness on all three axis (X: 8.8Hz vs 7.6Hz, Y: 8.7Hz vs 7.9Hz, Z: 8.4Hz vs 7.4Hz)
+3) Randomization 10% of Inertia Randomization during Training
+4) Randomization 0.01% of Noise during Training
+5) Randomization 0.01% of Noise + 10% of Inertia Randomization during Training
+6) CAPS + Randomization 0.01% of Noise + 10% of Inertia Randomization during Training
