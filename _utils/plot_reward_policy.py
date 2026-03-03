@@ -17,7 +17,7 @@ LOG_DISPLAY = ["Reward_policy/phi_mean", "Reward_policy/energy_mean",
 
 LOG_VAL = [1e1, 1e3, 1e2, 1e2]
 
-def load_data(files):
+def load_data(files, method):
     step_data = defaultdict(lambda: defaultdict(list))
     for f in files:
         try:
@@ -31,7 +31,10 @@ def load_data(files):
     result = {}
     for t in step_data:
         steps = sorted(step_data[t].keys())
-        m = [np.mean(step_data[t][s]) for s in steps]
+        if method == "median":
+            m = [np.median(step_data[t][s]) for s in steps]
+        else:
+            m = [np.mean(step_data[t][s]) for s in steps]
         mi = [np.min(step_data[t][s]) for s in steps]
         ma = [np.max(step_data[t][s]) for s in steps]
         result[t] = {"x": np.array(steps), "m": np.array(m), "min": np.array(mi), "max": np.array(ma)}
@@ -41,6 +44,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", type=str, required=True)
     ap.add_argument("--training", action="store_true")
+    ap.add_argument("--method", choices=["median", "mean"], required=True)
     ap.add_argument("--outdir", default="_img/plots_reward_policy")
     args = ap.parse_args()
 
@@ -55,7 +59,7 @@ def main():
     out = Path(args.outdir)
     out.mkdir(parents=True, exist_ok=True)
     
-    all_results = {gid: load_data(files) for gid, files in grouped.items()}
+    all_results = {gid: load_data(files, args.method) for gid, files in grouped.items()}
 
     gids_sorted = sorted(all_results.keys(), key=nat_key)
     unique_groups = sorted(
